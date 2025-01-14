@@ -5,55 +5,56 @@ using Extras;
 
 public class CubeScript : MonoBehaviour
 {
-    //Cube variables
+    // Cube layout:
+    //
+    //  6 7 8  |  (0,2) (1,2) (2,2)
+    //  3 4 5  |  (0,1) (1,1) (2,1)
+    //  0 1 2  |  (0,0) (1,0) (2,0)
+    //
+    //  Y -> 0
+    //  B -> 1
+    //  R -> 2
+    //  G -> 3
+    //  O -> 4
+    //  W -> 5  
+    //
+    //    O    |    Y    |    Y    |    Y    |    Y    |    R
+    //   YYY   |   BBB   |   RRR   |   GGG   |   OOO   |   WWW
+    // B YYY G | O BBB R | B RRR G | R GGG O | G OOO B | B WWW G
+    //   YYY   |   BBB   |   RRR   |   GGG   |   OOO   |   WWW
+    //    R    |    W    |    W    |    W    |    W    |    O
+    //
+
+    // Cube variables
     private GameObject MainCamera;
+    public float CameraDistance = 5.0f;
     private float Sensitivity = 8;
     private float Pitch = 45;
     private float Yaw = -45;
     private float UserDirection = 1;
-    private bool[] RunTest = new bool[3] { false, false, false };
     private bool LimitedInput = false;
     private GameObject[,,] Cubes = new GameObject[3, 3, 3];
 
-    //Save document variables
+    // Save document variables
     public static string NL = Environment.NewLine;
     private string WeightsSavePath;
     public static string path;
 
-    //Cube solver variables
+    // Cube solver variables
     private CubeSolver Solver = new CubeSolver();
     private bool StartSolve = false;
     private float[] Solution = new float[0];
     private int CurrentSolutionStep = 0;
-    private static string[,,] CurrentColors = new string[3, 3, 6];
+    private static char[,,] CurrentColors = new char[3, 3, 6];
     private float CurrentMove;
-    //history function
+    // history function
     private int Count = 0;
     private int CurrentSide = 0;
     private int MoveIndex = 0;
     private List<float> History = new List<float>();
     private float[] HistoryArray = new float[0];
-    //andrew rodgers method function
-    private string[,,] SolvedColors = new string[3, 3, 6];
-    private bool AndrewSolved = true;
 
     //Neural Network variables
-    // 324 inputs, 6 * (4+4+4+12+4+8+1+4) outputs
-    // x inputs, y hidden neurons, z hidden neurons, 12 outputs
-    // 8*12 inputs, 12 outputs
-    private static ModularNetwork ModNet = new ModularNetwork(new int[8][]
-        {
-            new int[] { 324 },
-            new int[] { 246 },
-            new int[] { 24, 24, 24, 72, 24, 48, 6, 24 },
-            new int[] { 80, 80, 36, 12, 26, 24, 4, 12 },
-            new int[] { 60, 84, 108, 72, 96, 144, 24, 144 },
-            new int[] { 12, 12, 12, 12, 12, 12, 12, 12 },
-            new int[] { 96 },
-            new int[] { 12 }
-        });
-    // 6 * (3*3*6), (4*5*4) + (4*5*2*2) + (2*2*(5+4)) + (2*2*2+4) + (7+7+6+6) + (4*3*2) + (4) + (4*3), 2 * 6 * (5 + 7 + 9 + 6 + 8 + 12 + 2 + 12), 6 * 2
-    // 6 * 54, 80 + 80 + 36 + 12 + 26 + 24 + 4 + 12, 30 + 42 + 54 + 36 + 48 + 72 + 12 + 72, 6 + 6
     private static NeuralNetwork Network = new NeuralNetwork(new int[] { 324, 274, 366, 12 });
     private float[] CurrentNeuralOutputs = new float[12];
     private bool Done;
@@ -74,7 +75,7 @@ public class CubeScript : MonoBehaviour
     void Start()
     {
         //Cube variable assignments
-        MainCamera = GameObject.Find("/Level/Camera");
+        MainCamera = Camera.main.gameObject;
 
         Cubes[0, 2, 0] = GameObject.Find("/Cube/TopFrontLeft");
         Cubes[1, 2, 0] = GameObject.Find("/Cube/TopFront");
@@ -107,45 +108,19 @@ public class CubeScript : MonoBehaviour
         //Solver assignments
         for (int i = 0; i < 6; i++)
         {
+            char color = IndexToColor(i);
             for (int j = 0; j < 3; j++)
             {
                 for (int k = 0; k < 3; k++)
                 {
-                    string temp;
-                    switch (i)
-                    {
-                        case 0:
-                            temp = "Y";
-                            break;
-                        case 1:
-                            temp = "B";
-                            break;
-                        case 2:
-                            temp = "R";
-                            break;
-                        case 3:
-                            temp = "G";
-                            break;
-                        case 4:
-                            temp = "O";
-                            break;
-                        case 5:
-                            temp = "W";
-                            break;
-                        default:
-                            temp = "Fail";
-                            break;
-                    }
-
-                    CurrentColors[k, j, i] = temp;
-                    SolvedColors[k, j, i] = temp;
+                    CurrentColors[k, j, i] = color;
                 }
             }
         }
 
         //Assign Save Document Variables
-        WeightsSavePath = @"C:\Users\ethro\Desktop\Math IA\Assets\Saves\Weight Saves.txt";
-        path = @"C:\Users\ethro\Desktop\Math IA\Assets\Saves\TestTextDocument.txt";
+        WeightsSavePath = Application.dataPath + @"\Saves\Weight Saves.txt";
+        path = Application.dataPath + @"\Saves\TestTextDocument.txt";
         System.IO.File.WriteAllText(path, "");
 
         //Neural and Modular Network Assignments
@@ -153,33 +128,6 @@ public class CubeScript : MonoBehaviour
 
     void Update()
     {
-        ///////////////
-        if (RunTest[0])
-        {
-            Debug.LogWarning("Entered Test Mode 1");
-            RunTest[0] = false;
-            Test1();
-            Debug.LogWarning("Exitted Test Mode 1");
-            return;
-        }
-        if (RunTest[1])
-        {
-            Debug.LogWarning("Entered Test Mode 2");
-            RunTest[1] = false;
-            Test2();
-            Debug.LogWarning("Exitted Test Mode 2");
-            return;
-        }
-        if (RunTest[2])
-        {
-            Debug.LogWarning("Entered Test Mode 3");
-            RunTest[2] = false;
-            Test3();
-            Debug.LogWarning("Exitted Test Mode 3");
-            return;
-        }
-        ///////////////
-
         UserInput();
     }
 
@@ -222,6 +170,14 @@ public class CubeScript : MonoBehaviour
 
     private void UserInput()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
+            Application.Quit();
+        }
+
         if (Input.GetMouseButton(0))
         {
             Yaw += Sensitivity * Input.GetAxis("Mouse X");
@@ -231,14 +187,19 @@ public class CubeScript : MonoBehaviour
             if (Pitch < -90)
                 Pitch = -90;
 
-            MainCamera.transform.eulerAngles = new Vector3(Pitch, Yaw, 0);
+            // Orbit the camera around the origin.
+            MainCamera.transform.position = Vector3.back * CameraDistance;
+            MainCamera.transform.eulerAngles = Vector3.zero;
+            MainCamera.transform.RotateAround(Vector3.zero, MainCamera.transform.up, Yaw);
+            MainCamera.transform.RotateAround(Vector3.zero, MainCamera.transform.right, Pitch);
         }
+
         if (Input.GetKeyDown(KeyCode.Alpha1))
-            RunTest[0] = true;
+            RunTest(Test1);
         if (Input.GetKeyDown(KeyCode.Alpha2))
-            RunTest[1] = true;
+            RunTest(Test2);
         if (Input.GetKeyDown(KeyCode.Alpha3))
-            RunTest[2] = true;
+            RunTest(Test3);
 
         if (LimitedInput)
             return;
@@ -271,10 +232,6 @@ public class CubeScript : MonoBehaviour
             System.Diagnostics.Process.Start(WeightsSavePath);
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
             System.IO.File.WriteAllText(WeightsSavePath, "");
-        if (Input.GetKeyDown(KeyCode.Slash))
-            AndrewSolved = false;
-        if (!AndrewSolved)
-            AndrewRodgersMethod();
         if (Input.GetKeyDown(KeyCode.Return))
         {
             Solver = new CubeSolver();
@@ -299,6 +256,41 @@ public class CubeScript : MonoBehaviour
             Finished = false;
         if (!Finished)
             MassTraining();
+    }
+
+    public static char IndexToColor(int index)
+    {
+        return index switch
+        {
+            0 => 'Y',
+            1 => 'B',
+            2 => 'R',
+            3 => 'G',
+            4 => 'O',
+            5 => 'W',
+            _ => throw new NotImplementedException("A cube cannot have more than 6 sides"),
+        };
+    }
+
+    public static int ColorToIndex(char color)
+    {
+        return color switch
+        {
+            'Y' => 0,
+            'B' => 1,
+            'R' => 2,
+            'G' => 3,
+            'O' => 4,
+            'W' => 5,
+            _ => throw new NotImplementedException("A cube does not have a " + color + " side"),
+        };
+    }
+
+    private static void RunTest(Action test)
+    {
+        Debug.LogWarning("Running Test");
+        test();
+        Debug.LogWarning("Ending Test");
     }
 
     public static void SaveCubeToDoc()
@@ -369,46 +361,11 @@ public class CubeScript : MonoBehaviour
         System.IO.File.AppendAllText(WeightsSavePath, "####### " + time + " #######" + NL);
     }
 
-    private void AndrewRodgersMethod()
-    {
-        switch (CurrentSide)
-        {
-            case 0:
-                BottomLayer(1);
-                break;
-            case 1:
-                RightLayer(-1);
-                break;
-            case 2:
-                TopLayer(-1);
-                break;
-            case 3:
-                LeftLayer(-1);
-                break;
-        }
-        CurrentSide = (CurrentSide + 1) % 4;
-        Count++;
-        for (int i = 0; i < 6; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                for (int k = 0; k < 3; k++)
-                {
-                    if (CurrentColors[k, j, i] != SolvedColors[k, j, i])
-                        return;
-                }
-            }
-        }
-        AndrewSolved = true;
-        Debug.Log(Count);
-        return;
-    }
-
     private void TopLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -416,12 +373,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[j, 2, i].transform.RotateAround(Vector3.up, Vector3.up, direction * 90);
                 temp[j, i] = Cubes[j, 2, i];
-                stringTemp[j, i] = CurrentColors[j, i, 0];
+                charTemp[j, i] = CurrentColors[j, i, 0];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1];
+            charSidesTemp[i] = CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1];
         }
 
         if (direction == 1)
@@ -431,12 +388,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[i, 2, Mathf.Abs(j - 2)] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 0] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 0] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1] = charSidesTemp[(i + 3) % 12];
             }
         }
         else if (direction == -1)
@@ -446,12 +403,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[Mathf.Abs(i - 2), 2, j] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 0] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 0] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 2, Mathf.FloorToInt(i / 3) + 1] = charSidesTemp[(i + 9) % 12];
             }
         }
     }
@@ -459,8 +416,8 @@ public class CubeScript : MonoBehaviour
     private void LeftLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -468,12 +425,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[0, i, j].transform.RotateAround(Vector3.back, Vector3.back, direction * 90);
                 temp[j, i] = Cubes[0, i, j];
-                stringTemp[j, i] = CurrentColors[j, i, 1];
+                charTemp[j, i] = CurrentColors[j, i, 1];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)];
+            charSidesTemp[i] = CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)];
         }
 
         if (direction == 1)
@@ -483,12 +440,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[0, j, Mathf.Abs(i - 2)] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 1] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 1] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = charSidesTemp[(i + 9) % 12];
             }
         }
         else if (direction == -1)
@@ -498,12 +455,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[0, Mathf.Abs(j - 2), i] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 1] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 1] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[0, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = charSidesTemp[(i + 3) % 12];
             }
         }
     }
@@ -511,8 +468,8 @@ public class CubeScript : MonoBehaviour
     private void FrontLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -520,12 +477,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[j, i, 0].transform.RotateAround(Vector3.right, Vector3.right, direction * 90);
                 temp[j, i] = Cubes[j, i, 0];
-                stringTemp[j, i] = CurrentColors[j, i, 2];
+                charTemp[j, i] = CurrentColors[j, i, 2];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)];
+            charSidesTemp[i] = CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)];
         }
 
         if (direction == 1)
@@ -535,12 +492,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[i, Mathf.Abs(j - 2), 0] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 2] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 2] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = charSidesTemp[(i + 9) % 12];
             }
         }
         else if (direction == -1)
@@ -550,12 +507,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[Mathf.Abs(i - 2), j, 0] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 2] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 2] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[Math.Sign((i + 1) * (i - 5.5) * (i - 11.5)) * Mathf.RoundToInt((float)Math.Tanh(((i + 3) % 6) - 1) + Math.Sign((i + 1) * (i - 5.5) * (i - 11.5))), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)(-Mathf.Abs(i - 4) + 4)), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = charSidesTemp[(i + 3) % 12];
             }
         }
     }
@@ -563,8 +520,8 @@ public class CubeScript : MonoBehaviour
     private void RightLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -572,12 +529,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[2, i, j].transform.RotateAround(Vector3.forward, Vector3.forward, direction * 90);
                 temp[j, i] = Cubes[2, i, j];
-                stringTemp[j, i] = CurrentColors[j, i, 3];
+                charTemp[j, i] = CurrentColors[j, i, 3];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)];
+            charSidesTemp[i] = CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)];
         }
 
         if (direction == 1)
@@ -587,12 +544,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[2, Mathf.Abs(j - 2), i] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 3] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 3] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = charSidesTemp[(i + 3) % 12];
             }
         }
         else if (direction == -1)
@@ -602,12 +559,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[2, j, Mathf.Abs(i - 2)] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 3] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 3] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[2, (int)(Mathf.Abs(i - (float)5.5) + 5.5) % 3, Mathf.CeilToInt(3 * Mathf.Sin((Mathf.Floor((-i - 3) / 3) % 5) + 5) + (float)1.4)] = charSidesTemp[(i + 9) % 12];
             }
         }
     }
@@ -615,8 +572,8 @@ public class CubeScript : MonoBehaviour
     private void BackLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -624,12 +581,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[j, i, 2].transform.RotateAround(Vector3.left, Vector3.right, direction * 90);
                 temp[j, i] = Cubes[j, i, 2];
-                stringTemp[j, i] = CurrentColors[j, i, 4];
+                charTemp[j, i] = CurrentColors[j, i, 4];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)];
+            charSidesTemp[i] = CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)];
         }
 
         if (direction == 1)
@@ -639,12 +596,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[i, Mathf.Abs(j - 2), 2] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 4] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 4] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = charSidesTemp[(i + 9) % 12];
             }
         }
         else if (direction == -1)
@@ -654,12 +611,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[Mathf.Abs(i - 2), j, 2] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 4] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 4] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[Mathf.RoundToInt((float)2.49 * Mathf.Pow((float)Math.E, (-1) * ((float)(i - 7)) / (float)3 * ((float)(i - 7)) / (float)3)), (int)((((double)Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) / (double)2) + 0.5) * (double)-Mathf.Abs(i - 4) + Math.Sign((i + 0.5) * (i - 2.5) * (i - 5.5) * (i - 8.5) * (i - 11.5)) + 3), Mathf.CeilToInt((float)3.1 * Mathf.Sin(Mathf.Floor((i / 3) + 16) % 12) + (float)2.9)] = charSidesTemp[(i + 3) % 12];
             }
         }
     }
@@ -667,8 +624,8 @@ public class CubeScript : MonoBehaviour
     private void BottomLayer(float direction)
     {
         GameObject[,] temp = new GameObject[3, 3];
-        string[,] stringTemp = new string[3, 3];
-        string[] stringSidesTemp = new string[12];
+        char[,] charTemp = new char[3, 3];
+        char[] charSidesTemp = new char[12];
 
         for (int i = 0; i < 3; i++)
         {
@@ -676,12 +633,12 @@ public class CubeScript : MonoBehaviour
             {
                 Cubes[j, 0, i].transform.RotateAround(Vector3.down, Vector3.up, direction * 90);
                 temp[j, i] = Cubes[j, 0, i];
-                stringTemp[j, i] = CurrentColors[j, i, 5];
+                charTemp[j, i] = CurrentColors[j, i, 5];
             }
         }
         for (int i = 0; i < 12; i++)
         {
-            stringSidesTemp[i] = CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1];
+            charSidesTemp[i] = CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1];
         }
 
         if (direction == 1)
@@ -691,12 +648,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[i, 0, Mathf.Abs(j - 2)] = temp[j, i];
-                    CurrentColors[i, Mathf.Abs(j - 2), 5] = stringTemp[j, i];
+                    CurrentColors[i, Mathf.Abs(j - 2), 5] = charTemp[j, i];
                 }
             }
             for (int i = 0; i < 12; i++)
             {
-                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1] = stringSidesTemp[(i + 3) % 12];
+                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1] = charSidesTemp[(i + 3) % 12];
             }
         }
         else if (direction == -1)
@@ -706,12 +663,12 @@ public class CubeScript : MonoBehaviour
                 for (int j = 0; j < 3; j++)
                 {
                     Cubes[Mathf.Abs(i - 2), 0, j] = temp[j, i];
-                    CurrentColors[Mathf.Abs(i - 2), j, 5] = stringTemp[j, i];
+                    CurrentColors[Mathf.Abs(i - 2), j, 5] = charTemp[j, i];
                 }
             }
             for (int i = 11; i > -1; i--)
             {
-                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1] = stringSidesTemp[(i + 9) % 12];
+                CurrentColors[(int)(-Mathf.Abs(i - (float)8.5) + 8.5) % 3, 0, Mathf.FloorToInt(i / 3) + 1] = charSidesTemp[(i + 9) % 12];
             }
         }
     }
@@ -745,41 +702,6 @@ public class CubeScript : MonoBehaviour
                     break;
             }
         }
-    }
-
-    //fix
-    private void Step(int direction)
-    {
-        Debug.Log(HistoryArray.Length - 1 + " " + MoveIndex);
-        if (MoveIndex == HistoryArray.Length - 1 && direction == 1)
-        {
-            GetCurrentMove();
-            return;
-        }
-
-        switch ((int)Mathf.Abs(HistoryArray[MoveIndex]))
-        {
-            case 1:
-                TopLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-            case 2:
-                LeftLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-            case 3:
-                FrontLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-            case 4:
-                RightLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-            case 5:
-                BackLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-            case 6:
-                BottomLayer(HistoryArray[MoveIndex] / Mathf.Abs(HistoryArray[MoveIndex] * direction));
-                break;
-        }
-
-        MoveIndex += direction;
     }
 
     private void Solve()
@@ -817,45 +739,6 @@ public class CubeScript : MonoBehaviour
         CurrentSolutionStep++;
     }
 
-    private void GetCurrentMove()
-    {
-        CurrentMove = Solver.CurrentMovesMethod(CurrentColors);
-        if (CurrentMove != 0 || CurrentMove != 7)
-            History.Add(CurrentMove);
-        HistoryArray = History.ToArray();
-        MoveIndex = HistoryArray.Length - 1;
-
-        switch ((int)Mathf.Abs(CurrentMove))
-        {
-            case 1:
-                TopLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 2:
-                LeftLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 3:
-                FrontLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 4:
-                RightLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 5:
-                BackLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 6:
-                BottomLayer(CurrentMove / Mathf.Abs(CurrentMove));
-                break;
-            case 7:
-                if (!Solver.Solved)
-                {
-                    Debug.Log("Solved!");
-                    Solver.Solved = true;
-                    StartSolve = false;
-                }
-                break;
-        }
-    }
-
     //################### Both Types Of Networks ###################
 
     private void AssignInputs()
@@ -869,42 +752,42 @@ public class CubeScript : MonoBehaviour
                 {
                     switch (CurrentColors[k, j, i])
                     {
-                        case "Y":
+                        case 'Y':
                             temp = new float[] { 1, 0, 0, 0, 0, 0 };
                             for (int m = 0; m < 6; m++)
                             {
                                 CurrentState[(54 * i) + (18 * j) + (6 * k) + m] = temp[m];
                             }
                             break;
-                        case "B":
+                        case 'B':
                             temp = new float[] { 0, 1, 0, 0, 0, 0 };
                             for (int m = 0; m < 6; m++)
                             {
                                 CurrentState[(54 * i) + (18 * j) + (6 * k) + m] = temp[m];
                             }
                             break;
-                        case "R":
+                        case 'R':
                             temp = new float[] { 0, 0, 1, 0, 0, 0 };
                             for (int m = 0; m < 6; m++)
                             {
                                 CurrentState[(54 * i) + (18 * j) + (6 * k) + m] = temp[m];
                             }
                             break;
-                        case "G":
+                        case 'G':
                             temp = new float[] { 0, 0, 0, 1, 0, 0 };
                             for (int m = 0; m < 6; m++)
                             {
                                 CurrentState[(54 * i) + (18 * j) + (6 * k) + m] = temp[m];
                             }
                             break;
-                        case "O":
+                        case 'O':
                             temp = new float[] { 0, 0, 0, 0, 1, 0 };
                             for (int m = 0; m < 6; m++)
                             {
                                 CurrentState[(54 * i) + (18 * j) + (6 * k) + m] = temp[m];
                             }
                             break;
-                        case "W":
+                        case 'W':
                             temp = new float[] { 0, 0, 0, 0, 0, 1 };
                             for (int m = 0; m < 6; m++)
                             {
@@ -1057,11 +940,12 @@ public class CubeScript : MonoBehaviour
     {
         for (int i = 0; i < 6; i++)
         {
+            char color = IndexToColor(i);
             for (int j = 0; j < 3; j++)
             {
                 for (int k = 0; k < 3; k++)
                 {
-                    if (CurrentColors[k, j, i] != SolvedColors[k, j ,i])
+                    if (CurrentColors[k, j, i] != color)
                         goto Skip;
                 }
             }

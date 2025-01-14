@@ -1,221 +1,67 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using static CubeScript;
 
 public class CubeSolver
 {
-    private string[,,] CurrentColors = new string[3, 3, 6];
-    private int CurrentMoveNum = -1;
-    private float[] CurrentMoves = new float[] { 0 };
-    private bool BottomCross = false;
-    private bool BottomCorners = false;
-    private bool MiddleEdges = false;
-    private bool TopCross = false;
-    private bool TopCorners = false;
-    private bool TopCornersPermutation = false;
-    private bool FewTouches = false;
-    private bool TopEdgesPermutation = false;
-    public bool Solved = false;
+    // Facex, Facey, Face#.
+    private char[,,] CurrentColors = new char[3, 3, 6];
 
-    public float CurrentMovesMethod(string[,,] Scramble)
+    public float[] FindSolution(char[,,] scramble)
     {
-        for (int i = 0; i < 6; i++)
+        // Copy the colors from the input parameter.
+        Array.Copy(scramble, CurrentColors, scramble.Length);
+        //for (int i = 0; i < 6; i++)
+        //{
+        //    for (int j = 0; j < 3; j++)
+        //    {
+        //        for (int k = 0; k < 3; k++)
+        //        {
+        //            CurrentColors[k, j, i] = scramble[k, j, i];
+        //        }
+        //    }
+        //}
+
+        // We will append moves onto the solution as we perform the different beginner methods.
+        List<float> solution = new();
+
+        // The beginner methods used to solve the cube.
+        Func<float[]>[] methods = new Func<float[]>[]
         {
-            for (int j = 0; j < 3; j++)
+            BottomCrossMethod,
+            BottomCornersMethod,
+            MiddleEdgesMethod,
+            TopCrossMethod,
+            TopCornersMethod,
+            TopCornersPermutationMethod,
+            FewTouchesMethod,
+            TopEdgesPermutationMethod
+        };
+
+        // Apply all the methods.
+        for (int i = 0; i < methods.Length; ++i)
+        {
+            // Start by solving the bottom white cross.
+            while (true)
             {
-                for (int k = 0; k < 3; k++)
-                {
-                    CurrentColors[k, j, i] = Scramble[k, j, i];
-                }
+                // Get the next few moves.
+                float[] newMoves = methods[i]();
+
+                // Stop if there are none.
+                if (newMoves[0] == 0)
+                    break;
+
+                // Add the moves to the solution.
+                solution.AddRange(newMoves);
+
+                // Apply the moves to solve for the next part of the solution.
+                for (int j = 0; j < newMoves.Length; ++j)
+                    RotateSides(newMoves[i]);
             }
         }
 
-        CurrentMoveNum++;
-
-        if (CurrentMoveNum < CurrentMoves.Length)
-            return CurrentMoves[CurrentMoveNum];
-        else if (!BottomCross)
-            CurrentMoves = BottomCrossMethod();
-        else if (!BottomCorners)
-            CurrentMoves = BottomCornersMethod();
-        else if (!MiddleEdges)
-            CurrentMoves = MiddleEdgesMethod();
-        else if (!TopCross)
-            CurrentMoves = TopCrossMethod();
-        else if (!TopCorners)
-            CurrentMoves = TopCornersMethod();
-        else if (!TopCornersPermutation)
-            CurrentMoves = TopCornersPermutationMethod();
-        else if (!FewTouches)
-            CurrentMoves = FewTouchesMethod();
-        else if (!TopEdgesPermutation)
-            CurrentMoves = TopEdgesPermutationMethod();
-        else
-            return 7;
-
-        CurrentMoveNum = 0;
-        return CurrentMoves[CurrentMoveNum];
-    }
-
-    public float[] FindSolution(string[,,] Scramble)
-    {
-        for (int i = 0; i < 6; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                for (int k = 0; k < 3; k++)
-                {
-                    CurrentColors[k, j, i] = Scramble[k, j, i];
-                }
-            }
-        }
-        float[] solution = new float[0];
-
-        while (!BottomCross)
-        {
-            float[] temp2 = BottomCrossMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-            solution = new float[temp1.Length + temp2.Length];
-
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!BottomCorners)
-        {
-            float[] temp2 = BottomCornersMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!MiddleEdges)
-        {
-            float[] temp2 = MiddleEdgesMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!TopCross)
-        {
-            float[] temp2 = TopCrossMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!TopCorners)
-        {
-            float[] temp2 = TopCornersMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!TopCornersPermutation)
-        {
-            float[] temp2 = TopCornersPermutationMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!FewTouches)
-        {
-            float[] temp2 = FewTouchesMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-        while (!TopEdgesPermutation)
-        {
-            float[] temp2 = TopEdgesPermutationMethod();
-            if (temp2[0] == 0)
-                break;
-            float[] temp1 = solution;
-
-            solution = new float[temp1.Length + temp2.Length];
-            for (int i = 0; i < temp1.Length; i++)
-            {
-                solution[i] = temp1[i];
-            }
-            for (int i = 0; i < temp2.Length; i++)
-            {
-                solution[temp1.Length + i] = temp2[i];
-                RotateSides(temp2[i]);
-            }
-        }
-
-        return solution;
+        return solution.ToArray();
     }
 
     private void RotateSides(float side)
@@ -224,8 +70,8 @@ public class CubeSolver
         switch ((int)Mathf.Abs(side))
         {
             case 1:
-                string[,] face1 = new string[3, 3];
-                string[] faceEdge1 = new string[12];
+                char[,] face1 = new char[3, 3];
+                char[] faceEdge1 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -269,8 +115,8 @@ public class CubeSolver
                 }
                 break;
             case 2:
-                string[,] face2 = new string[3, 3];
-                string[] faceEdge2 = new string[12];
+                char[,] face2 = new char[3, 3];
+                char[] faceEdge2 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -314,8 +160,8 @@ public class CubeSolver
                 }
                 break;
             case 3:
-                string[,] face3 = new string[3, 3];
-                string[] faceEdge3 = new string[12];
+                char[,] face3 = new char[3, 3];
+                char[] faceEdge3 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -359,8 +205,8 @@ public class CubeSolver
                 }
                 break;
             case 4:
-                string[,] face4 = new string[3, 3];
-                string[] faceEdge4 = new string[12];
+                char[,] face4 = new char[3, 3];
+                char[] faceEdge4 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -404,8 +250,8 @@ public class CubeSolver
                 }
                 break;
             case 5:
-                string[,] face5 = new string[3, 3];
-                string[] faceEdge5 = new string[12];
+                char[,] face5 = new char[3, 3];
+                char[] faceEdge5 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -449,8 +295,8 @@ public class CubeSolver
                 }
                 break;
             case 6:
-                string[,] face6 = new string[3, 3];
-                string[] faceEdge6 = new string[12];
+                char[,] face6 = new char[3, 3];
+                char[] faceEdge6 = new char[12];
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -497,9 +343,9 @@ public class CubeSolver
         }
     }
 
-    private string FindAdjacentEdge(int posx, int posy, int side)
+    private char FindConnectedEdgeColor(int posx, int posy, int side)
     {
-        string adColor = "";
+        char adColor = ' ';
 
         switch (side)
         {
@@ -618,6 +464,45 @@ public class CubeSolver
         return adColor;
     }
 
+    private int GetAdjacentSide(int posx, int posy, int side)
+    {
+        if (side == 0 || side == 5)
+        {
+            if (posy == 1)
+            {
+                return posx + 1;
+            }
+            else if (side == 0)
+            {
+                return posy + 2;
+            }
+            else
+            {
+                return 4 - posy;
+            }
+        }
+        else if (posx == 1)
+        {
+            return 5 - posy * 5 / 2;
+        }
+        else if (side == 1)
+        {
+            return 4 - posx;
+        }
+        else if (side == 2)
+        {
+            return posx + 1;
+        }
+        else if (side == 3)
+        {
+            return posx + 2;
+        }
+        else
+        {
+            return 3 - posx;
+        }
+    }
+
     private string FindAdjacentCorners(int posx, int posy, int side)
     {
         string matchColors = "";
@@ -631,10 +516,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 2, 2] + CurrentColors[2, 2, 1];
+                                matchColors = string.Concat(CurrentColors[0, 2, 2], CurrentColors[2, 2, 1]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[0, 2, 1] + CurrentColors[0, 2, 4];
+                                matchColors = string.Concat(CurrentColors[0, 2, 1], CurrentColors[0, 2, 4]);
                                 break;
                         }
                         break;
@@ -642,10 +527,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 2, 3] + CurrentColors[2, 2, 2];
+                                matchColors = string.Concat(CurrentColors[0, 2, 3], CurrentColors[2, 2, 2]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 2, 4] + CurrentColors[2, 2, 3];
+                                matchColors = string.Concat(CurrentColors[2, 2, 4], CurrentColors[2, 2, 3]);
                                 break;
                         }
                         break;
@@ -658,10 +543,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 2, 5] + CurrentColors[0, 0, 4];
+                                matchColors = string.Concat(CurrentColors[0, 2, 5], CurrentColors[0, 0, 4]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[0, 2, 4] + CurrentColors[0, 2, 0];
+                                matchColors = string.Concat(CurrentColors[0, 2, 4], CurrentColors[0, 2, 0]);
                                 break;
                         }
                         break;
@@ -669,10 +554,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 0, 2] + CurrentColors[0, 0, 5];
+                                matchColors = string.Concat(CurrentColors[0, 0, 2], CurrentColors[0, 0, 5]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[0, 0, 0] + CurrentColors[0, 2, 2];
+                                matchColors = string.Concat(CurrentColors[0, 0, 0], CurrentColors[0, 2, 2]);
                                 break;
                         }
                         break;
@@ -685,10 +570,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 0, 5] + CurrentColors[2, 0, 1];
+                                matchColors = string.Concat(CurrentColors[0, 0, 5], CurrentColors[2, 0, 1]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 2, 1] + CurrentColors[0, 0, 0];
+                                matchColors = string.Concat(CurrentColors[2, 2, 1], CurrentColors[0, 0, 0]);
                                 break;
                         }
                         break;
@@ -696,10 +581,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 0, 3] + CurrentColors[2, 0, 5];
+                                matchColors = string.Concat(CurrentColors[0, 0, 3], CurrentColors[2, 0, 5]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 0, 0] + CurrentColors[0, 2, 3];
+                                matchColors = string.Concat(CurrentColors[2, 0, 0], CurrentColors[0, 2, 3]);
                                 break;
                         }
                         break;
@@ -712,10 +597,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[2, 0, 5] + CurrentColors[2, 0, 2];
+                                matchColors = string.Concat(CurrentColors[2, 0, 5], CurrentColors[2, 0, 2]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 2, 2] + CurrentColors[2, 0, 0];
+                                matchColors = string.Concat(CurrentColors[2, 2, 2], CurrentColors[2, 0, 0]);
                                 break;
                         }
                         break;
@@ -723,10 +608,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[2, 0, 4] + CurrentColors[2, 2, 5];
+                                matchColors = string.Concat(CurrentColors[2, 0, 4], CurrentColors[2, 2, 5]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 2, 0] + CurrentColors[2, 2, 4];
+                                matchColors = string.Concat(CurrentColors[2, 2, 0], CurrentColors[2, 2, 4]);
                                 break;
                         }
                         break;
@@ -739,10 +624,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[0, 0, 1] + CurrentColors[0, 2, 0];
+                                matchColors = string.Concat(CurrentColors[0, 0, 1], CurrentColors[0, 2, 0]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[0, 2, 0] + CurrentColors[0, 2, 1];
+                                matchColors = string.Concat(CurrentColors[0, 2, 0], CurrentColors[0, 2, 1]);
                                 break;
                         }
                         break;
@@ -750,10 +635,10 @@ public class CubeSolver
                         switch (posy)
                         {
                             case 0:
-                                matchColors = CurrentColors[2, 2, 5] + CurrentColors[2, 0, 3];
+                                matchColors = string.Concat(CurrentColors[2, 2, 5], CurrentColors[2, 0, 3]);
                                 break;
                             case 2:
-                                matchColors = CurrentColors[2, 2, 3] + CurrentColors[2, 2, 0];
+                                matchColors = string.Concat(CurrentColors[2, 2, 3], CurrentColors[2, 2, 0]);
                                 break;
                         }
                         break;
@@ -766,506 +651,510 @@ public class CubeSolver
 
     private float[] BottomCrossMethod()
     {
-        float[] temp = new float[] { 0 };
-        int posx = 0;
-        int posy = 0;
-        int side = 0;
-        string adColor;
+        List<float> steps = new();
 
-        for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 4; ++j)
         {
-            for (int k = 1; k < 9; k += 2)
+            bool found = false;
+            for (int i = 0; i < 5; ++i)
             {
-                if (CurrentColors[k % 3, Mathf.FloorToInt(k / 3), i] == "W")
+                for (int k = 1; k < 9; k += 2)
                 {
-                    posx = k % 3;
-                    posy = Mathf.FloorToInt(k / 3);
-                    side = i;
-                    goto SkipFind;
+                    int x = k % 3;
+                    int y = Mathf.FloorToInt(k / 3);
+                    if (CurrentColors[x, y, i] == 'W')
+                    {
+                        found = true;
+                        char adColor = FindConnectedEdgeColor(x, y, i);
+                        int adSide = ColorToIndex(adColor); 
+
+                        // We have different algorithms depending on which side the white tile is on.
+                        //
+                        // Yellow side: rotate yellow to correct colored side then 180 that side.
+                        // White side: 180 rotate to the yellow side, then align with correct
+                        // colored side, then 180 that side ti put in place.
+                        // Colored side: rotate side with color to put white square on yellow
+                        // side, then rotate the top once and unrotate the side. Then align with
+                        // correct side and 180 that side to put it in place.
+                        //
+                        switch (i)
+                        {
+                            case 5:
+
+                                break;
+                        }
+
+                        //switch (adColor)
+                        //{
+                        //    case 'B':
+                        //        switch (i)
+                        //        {
+                        //            case 0:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 2, 2 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 1, 2, 2 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { -1, 2, 2 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 1, 1, 2, 2 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 1:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 6, -5, -6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 2, 6, -5, -6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 2, -6, -3, 6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -6, -3, 6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 2:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 2 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 3, 2 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { -3, 2, 3 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 3, 3, 2, 3, 3 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 3:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -6, 3, 6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 4, -6, 3, 6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 4, 6, 5, -6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 6, 5, -6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 4:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -2 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 5, -2 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { -5, -2, 5 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 5, 5, -2, 5, 5 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //        }
+                        //        break;
+                        //    case 'R':
+                        //        switch (i)
+                        //        {
+                        //            case 0:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -1, 3, 3 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 3, 3 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 1, 1, 3, 3 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 1, 3, 3 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 1:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 2, 2, -3, 2, 2 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { -2, -3 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 2, -3, -2 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -3 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 2:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 6, 2, -6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 3, 6, 2, -6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 3, -6, -4, 6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -6, -4, 6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 3:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 3 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 4, 3 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { -4, 3, 4 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 4, 4, 3, 4, 4 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 4:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 6, -2, -6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 5, 6, -2, -6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 5, -6, 4, 6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -6, 4, 6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //        }
+                        //        break;
+                        //    case 'G':
+                        //        switch (i)
+                        //        {
+                        //            case 0:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 1, 1, 4, 4 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { -1, 4, 4 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 1, 4, 4 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 4, 4 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 1:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -6, -5, 6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 2, -6, -5, 6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 2, 6, -3, -6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 6, -3, -6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 2:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 3, 3, -4, 3, 3 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { -3, -4 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 3, -4, -3 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -4 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 3:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 6, 3, -6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 4, 6, 3, -6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 4, -6, 5, 6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -6, 5, 6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 4:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 5, 5, 4, 5, 5 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { -5, 4 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 5, 4, -5 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 4 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //        }
+                        //        break;
+                        //    case 'O':
+                        //        switch (i)
+                        //        {
+                        //            case 0:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 1, 5, 5 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 1, 1, 5, 5 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 5, 5 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { -1, 5, 5 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 1:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -5 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 2, -5 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { -2, -5, 2 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 2, 2, -5, 2, 2 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 2:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -6, 2, 6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 3, -6, 2, 6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 3, 6, -4, -6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 6, -4, -6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 3:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { 4, 4, 5, 4, 4 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { -4, 5 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 4, 5, -4 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 5 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //            case 4:
+                        //                switch (x)
+                        //                {
+                        //                    case 0:
+                        //                        steps.AddRange(new float[] { -6, -2, 6 });
+                        //                        break;
+                        //                    case 1:
+                        //                        switch (y)
+                        //                        {
+                        //                            case 0:
+                        //                                steps.AddRange(new float[] { 5, -6, -2, 6 });
+                        //                                break;
+                        //                            case 2:
+                        //                                steps.AddRange(new float[] { 5, 6, 4, -6 });
+                        //                                break;
+                        //                        }
+                        //                        break;
+                        //                    case 2:
+                        //                        steps.AddRange(new float[] { 6, 4, -6 });
+                        //                        break;
+                        //                }
+                        //                break;
+                        //        }
+                        //        break;
+                        //}
+                    }
                 }
+                if (found)
+                    break;
             }
         }
-        if (CurrentColors[1, 0, 1] != "B")
-            temp = new float[] { 2, 2 };
-        else if (CurrentColors[1, 0, 2] != "R")
-            temp = new float[] { 3, 3 };
-        else if (CurrentColors[1, 0, 4] != "O")
-            temp = new float[] { 5, 5 };
-        else if (CurrentColors[1, 0, 3] != "G")
-            temp = new float[] { 4, 4 };
-        else
-            BottomCross = true;
 
-        goto Finish;
-        SkipFind:
-        adColor = FindAdjacentEdge(posx, posy, side);
-
-        switch (adColor)
-        {
-            case "B":
-                switch (side)
-                {
-                    case 0:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 2, 2 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 1, 2, 2 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { -1, 2, 2 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 1, 1, 2, 2 };
-                                break;
-                        }
-                        break;
-                    case 1:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 6, -5, -6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 2, 6, -5, -6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 2, -6, -3, 6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -6, -3, 6 };
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 2 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 3, 2 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { -3, 2, 3 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 3, 3, 2, 3, 3 };
-                                break;
-                        }
-                        break;
-                    case 3:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -6, 3, 6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 4, -6, 3, 6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 4, 6, 5, -6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 6, 5, -6 };
-                                break;
-                        }
-                        break;
-                    case 4:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -2 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 5, -2 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { -5, -2, 5 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 5, 5, -2, 5, 5 };
-                                break;
-                        }
-                        break;
-                }
-                break;
-            case "R":
-                switch (side)
-                {
-                    case 0:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -1, 3, 3 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 3, 3 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 1, 1, 3, 3 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 1, 3, 3 };
-                                break;
-                        }
-                        break;
-                    case 1:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 2, 2, -3, 2, 2 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { -2, -3 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 2, -3, -2 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -3 };
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 6, 2, -6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 3, 6, 2, -6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 3, -6, -4, 6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -6, -4, 6 };
-                                break;
-                        }
-                        break;
-                    case 3:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 3 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 4, 3 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { -4, 3, 4 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 4, 4, 3, 4, 4 };
-                                break;
-                        }
-                        break;
-                    case 4:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 6, -2, -6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 5, 6, -2, -6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 5, -6, 4, 6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -6, 4, 6 };
-                                break;
-                        }
-                        break;
-                }
-                break;
-            case "G":
-                switch (side)
-                {
-                    case 0:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 1, 1, 4, 4 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { -1, 4, 4 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 1, 4, 4 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 4, 4 };
-                                break;
-                        }
-                        break;
-                    case 1:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -6, -5, 6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 2, -6, -5, 6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 2, 6, -3, -6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 6, -3, -6 };
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 3, 3, -4, 3, 3 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { -3, -4 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 3, -4, -3 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -4 };
-                                break;
-                        }
-                        break;
-                    case 3:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 6, 3, -6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 4, 6, 3, -6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 4, -6, 5, 6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -6, 5, 6 };
-                                break;
-                        }
-                        break;
-                    case 4:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 5, 5, 4, 5, 5 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { -5, 4 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 5, 4, -5 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 4 };
-                                break;
-                        }
-                        break;
-                }
-                break;
-            case "O":
-                switch (side)
-                {
-                    case 0:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 1, 5, 5 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 1, 1, 5, 5 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 5, 5 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { -1, 5, 5 };
-                                break;
-                        }
-                        break;
-                    case 1:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -5 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 2, -5 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { -2, -5, 2 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 2, 2, -5, 2, 2 };
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -6, 2, 6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 3, -6, 2, 6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 3, 6, -4, -6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 6, -4, -6 };
-                                break;
-                        }
-                        break;
-                    case 3:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { 4, 4, 5, 4, 4 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { -4, 5 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 4, 5, -4 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 5 };
-                                break;
-                        }
-                        break;
-                    case 4:
-                        switch (posx)
-                        {
-                            case 0:
-                                temp = new float[] { -6, -2, 6 };
-                                break;
-                            case 1:
-                                switch (posy)
-                                {
-                                    case 0:
-                                        temp = new float[] { 5,- 6, -2, 6 };
-                                        break;
-                                    case 2:
-                                        temp = new float[] { 5, 6, 4, -6 };
-                                        break;
-                                }
-                                break;
-                            case 2:
-                                temp = new float[] { 6, 4, -6 };
-                                break;
-                        }
-                        break;
-                }
-                break;
-        }
-
-        Finish:
-        return temp;
+        return steps.ToArray();
     }
 
     private float[] BottomCornersMethod()
@@ -1280,7 +1169,7 @@ public class CubeSolver
         {
             for (int k = 0; k < 9; k += 2)
             {
-                if (CurrentColors[k % 3, Mathf.FloorToInt(k / 3), i] == "W")
+                if (CurrentColors[k % 3, Mathf.FloorToInt(k / 3), i] == 'W')
                 {
                     posx = k % 3;
                     posy = Mathf.FloorToInt(k / 3);
@@ -1289,16 +1178,14 @@ public class CubeSolver
                 }
             }
         }
-        if (CurrentColors[2, 0, 1] + CurrentColors[0, 0, 2] != "BR")
+        if (CurrentColors[2, 0, 1] != 'B' || CurrentColors[0, 0, 2] != 'R')
             temp = new float[] { 3, 1, -3 };
-        else if (CurrentColors[2, 0, 2] + CurrentColors[0, 0, 3] != "RG")
+        else if (CurrentColors[2, 0, 2] != 'R' || CurrentColors[0, 0, 3] != 'G')
             temp = new float[] { 4, 1, -4 };
-        else if (CurrentColors[2, 0, 3] + CurrentColors[2, 0, 4] != "GO")
+        else if (CurrentColors[2, 0, 3] != 'G' || CurrentColors[2, 0, 4] != 'O')
             temp = new float[] { -5, 1, 5 };
-        else if (CurrentColors[0, 0, 4] + CurrentColors[0, 0, 1] != "OB")
+        else if (CurrentColors[0, 0, 4] != 'O' || CurrentColors[0, 0, 1] != 'B')
             temp = new float[] { 2, 1, -2 };
-        else
-            BottomCorners = true;
         goto Finish;
         SkipFind:
         adColor = FindAdjacentCorners(posx, posy, side).Remove(1);
@@ -1877,50 +1764,48 @@ public class CubeSolver
         int posx = 0;
         int posy = 0;
         int side = 0;
-        string color = "";
-        string adColor = "";
+        char color = ' ';
+        char adColor = ' ';
 
         for (int i = 0; i < 5; i++)
         {
             for (int k = 7; k > 0; k -= 2)
             {
-                string currentTile = CurrentColors[k % 3, Mathf.FloorToInt(k / 3), i];
+                char currentTile = CurrentColors[k % 3, Mathf.FloorToInt(k / 3), i];
 
                 if (i > 0 && k < 7)
                     break;
-                else if (currentTile == "Y" || currentTile == "R" || currentTile == "O")
+                else if (currentTile == 'Y' || currentTile == 'R' || currentTile == 'O')
                     continue;
-                else if (FindAdjacentEdge(k % 3, Mathf.FloorToInt(k / 3), i) == "Y")
+                else if (FindConnectedEdgeColor(k % 3, Mathf.FloorToInt(k / 3), i) == 'Y')
                     continue;
 
                 posx = k % 3;
                 posy = Mathf.FloorToInt(k / 3);
                 side = i;
                 color = currentTile;
-                adColor = FindAdjacentEdge(posx, posy, side);
+                adColor = FindConnectedEdgeColor(posx, posy, side);
                 goto SkipFind;
             }
         }
-        if (CurrentColors[0, 1, 1] != "B" || CurrentColors[0, 1, 4] != "O")
+        if (CurrentColors[0, 1, 1] != 'B' || CurrentColors[0, 1, 4] != 'O')
             temp = new float[] { 2, 1, -2, -1, 5, -1, -5 };
-        else if (CurrentColors[2, 1, 1] != "B" || CurrentColors[0, 1, 2] != "R")
+        else if (CurrentColors[2, 1, 1] != 'B' || CurrentColors[0, 1, 2] != 'R')
             temp = new float[] { -2, -1, 2, 1, 3, 1, -3 };
-        else if (CurrentColors[0, 1, 3] != "G" || CurrentColors[2, 1, 2] != "R")
+        else if (CurrentColors[0, 1, 3] != 'G' || CurrentColors[2, 1, 2] != 'R')
             temp = new float[] { 4, 1, -4, -1, -3, -1, 3 };
-        else if (CurrentColors[2, 1, 3] != "G" || CurrentColors[2, 1, 4] != "O")
+        else if (CurrentColors[2, 1, 3] != 'G' || CurrentColors[2, 1, 4] != 'O')
             temp = new float[] { -4, -1, 4, 1, -5, 1, 5 };
-        else
-            MiddleEdges = true;
 
         goto Finish;
         SkipFind:
 
         switch (color)
         {
-            case "B":
+            case 'B':
                 switch (adColor)
                 {
-                    case "O":
+                    case 'O':
                         switch (side)
                         {
                             case 0:
@@ -1959,7 +1844,7 @@ public class CubeSolver
                                 break;
                         }
                         break;
-                    case "R":
+                    case 'R':
                         switch (side)
                         {
                             case 0:
@@ -2000,10 +1885,10 @@ public class CubeSolver
                         break;
                 }
                 break;
-            case "G":
+            case 'G':
                 switch (adColor)
                 {
-                    case "R":
+                    case 'R':
                         switch (side)
                         {
                             case 0:
@@ -2042,7 +1927,7 @@ public class CubeSolver
                                 break;
                         }
                         break;
-                    case "O":
+                    case 'O':
                         switch (side)
                         {
                             case 0:
@@ -2095,15 +1980,15 @@ public class CubeSolver
         int side = 0;
         int biggest = 0;
 
-        if (CurrentColors[0, 1, 0] + CurrentColors[1, 0, 0] + CurrentColors[1, 2, 0] + CurrentColors[2, 1, 0] == "YYYY")
+        if (CurrentColors[0, 1, 0] == 'Y' && CurrentColors[1, 0, 0] == 'Y' &&
+            CurrentColors[1, 2, 0] == 'Y' && CurrentColors[2, 1, 0] == 'Y')
         {
-            TopCross = true;
             goto Finish;
         }
 
         for (int i = 0; i < 4; i++)
         {
-            string[] line = new string[3];
+            char[] line = new char[3];
             int consecutive;
             for (int j = 0; j < 3; j++)
             {
@@ -2111,13 +1996,13 @@ public class CubeSolver
             }
             switch (line[0])
             {
-                case "Y":
+                case 'Y':
                     switch (line[1])
                     {
-                        case "Y":
+                        case 'Y':
                             switch (line[2])
                             {
-                                case "Y":
+                                case 'Y':
                                     consecutive = 0;
                                     break;
                                 default:
@@ -2128,7 +2013,7 @@ public class CubeSolver
                         default:
                             switch (line[2])
                             {
-                                case "Y":
+                                case 'Y':
                                     consecutive = 1;
                                     break;
                                 default:
@@ -2141,13 +2026,13 @@ public class CubeSolver
                 default:
                     switch (line[1])
                     {
-                        case "Y":
+                        case 'Y':
                             consecutive = 1;
                             break;
                         default:
                             switch (line[2])
                             {
-                                case "Y":
+                                case 'Y':
                                     consecutive = 2;
                                     break;
                                 default:
@@ -2205,7 +2090,7 @@ public class CubeSolver
                         switch (corners[2])
                         {
                             case 0:
-                                TopCorners = true;
+                                int useless = 0;
                                 break;
                             default:
                                 temp = new float[] { -5, 1, 5, 1, -5, 1, 1, 5 };
@@ -2342,7 +2227,7 @@ public class CubeSolver
                         switch (corners.IndexOf("GR "))
                         {
                             case 6:
-                                TopCornersPermutation = true;
+                                int useless = 0;
                                 break;
                             default:
                                 temp = new float[] { 5, 4, 5, 2, 2, -5, -4, 5, 2, 2, 5, 5 };
@@ -2391,7 +2276,7 @@ public class CubeSolver
                         switch (corners.IndexOf("GR "))
                         {
                             case 9:
-                                TopCornersPermutation = true;
+                                int useless = 0;
                                 break;
                             default:
                                 temp = new float[] { -2, -5, -2, 3, 3, 2, 5, -2, 3, 3, 2, 2 };
@@ -2440,7 +2325,7 @@ public class CubeSolver
                         switch (corners.IndexOf("GR "))
                         {
                             case 0:
-                                TopCornersPermutation = true;
+                                int useless = 0;
                                 break;
                             default:
                                 temp = new float[] { -3, 2, -3, 4, 4, 3, -2, -3, 4, 4, 3, 3 };
@@ -2456,7 +2341,7 @@ public class CubeSolver
                         switch (corners.IndexOf("GR "))
                         {
                             case 3:
-                                TopCornersPermutation = true;
+                                int useless = 0;
                                 break;
                             default:
                                 temp = new float[] { -4, 3, -4, 5, 5, 4, -3, -4, 5, 5, 4, 4 };
@@ -2495,20 +2380,20 @@ public class CubeSolver
     private float[] FewTouchesMethod()
     {
         float[] temp = new float[] { 0 };
-        string indicators = CurrentColors[0, 2, 1];
+        char indicators = CurrentColors[0, 2, 1];
 
         switch (indicators)
         {
-            case "B":
-                FewTouches = true;
+            case 'B':
+                int useless = 0;
                 break;
-            case "R":
+            case 'R':
                 temp = new float[] { -1 };
                 break;
-            case "G":
+            case 'G':
                 temp = new float[] { 1, 1 };
                 break;
-            case "O":
+            case 'O':
                 temp = new float[] { 1 };
                 break;
         }
@@ -2519,7 +2404,7 @@ public class CubeSolver
     private float[] TopEdgesPermutationMethod()
     {
         float[] temp = new float[] { 0 };
-        string[] edges = new string[2];
+        char[] edges = new char[2];
 
         for (int i = 0; i < 2; i++)
         {
@@ -2528,58 +2413,58 @@ public class CubeSolver
 
         switch (edges[0])
         {
-            case "B":
+            case 'B':
                 switch (edges[1])
                 {
-                    case "R":
-                        TopEdgesPermutation = true;
+                    case 'R':
+                        int useless = 0;
                         break;
-                    case "G":
+                    case 'G':
                         temp = new float[] { 4, 4, -1, 3, 5, 4, 4, -3, -5, -1, 4, 4 };
                         break;
-                    case "O":
+                    case 'O':
                         temp = new float[] { 4, 4, 1, 3, 5, 4, 4, -3, -5, 1, 4, 4 };
                         break;
                 }
                 break;
-            case "R":
+            case 'R':
                 switch (edges[1])
                 {
-                    case "B":
+                    case 'B':
                         temp = new float[] { 3, 3, 1, 2, -4, 3, 3, -2, 4, 1, 3, 3 };
                         break;
-                    case "G":
+                    case 'G':
                         temp = new float[] { 3, 3, -1, 2, -4, 3, 3, -2, 4, -1, 3, 3 };
                         break;
-                    case "O":
+                    case 'O':
                         temp = new float[] { 2, 2, -1, -5, -3, 2, 2, 5, 3, -1, 2, 2 };
                         break;
                 }
                 break;
-            case "G":
+            case 'G':
                 switch (edges[1])
                 {
-                    case "B":
+                    case 'B':
                         temp = new float[] { 3, 3, 1, 2, -4, 3, 3, -2, 4, 1, 3, 3 };
                         break;
-                    case "R":
+                    case 'R':
                         temp = new float[] { 5, 5, -1, 4, -2, 5, 5, -4, 2, -1, 5, 5 };
                         break;
-                    case "O":
+                    case 'O':
                         temp = new float[] { 3, 3, 1, 2, -4, 3, 3, -2, 4, 1, 3, 3 };
                         break;
                 }
                 break;
-            case "O":
+            case 'O':
                 switch (edges[1])
                 {
-                    case "B":
+                    case 'B':
                         temp = new float[] { 2, 2, 1, -5, -3, 2, 2, 5, 3, 1, 2, 2 };
                         break;
-                    case "R":
+                    case 'R':
                         temp = new float[] { 5, 5, 1, 4, -2, 5, 5, -4, 2, 1, 5, 5 };
                         break;
-                    case "G":
+                    case 'G':
                         temp = new float[] { 3, 3, 1, 2, -4, 3, 3, -2, 4, 1, 3, 3 };
                         break;
                 }
