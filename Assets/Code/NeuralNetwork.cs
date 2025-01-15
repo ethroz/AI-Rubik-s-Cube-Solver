@@ -1,191 +1,253 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 
-public class NeuralNetwork {
-    public float Time;
-    public string Level;
-    public ActivationType Type;
-    public int[] Size;
-    public Layer[] Layers;
+public class NeuralNetwork : IComparable<NeuralNetwork> {
+    private readonly Layer[] Layers;
+    public float Fitness;
 
-    public NeuralNetwork(int[] size, ActivationType type = ActivationType.SIGMOID) {
-        if (size.Length < 2) {
-            Debug.LogError("Neural Network must have at least 2 layers");
-            return;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NeuralNetwork"/> class.
+    /// </summary>
+    /// <param name="layers">The layers of the neural network.</param>
+    /// <param name="activationTypes">The activation types for each layer.</param>
+    public NeuralNetwork(List<int> layers, List<ActivationType> activationTypes, float learningRate = 0.01f) {
+        if (activationTypes.Count >= layers.Count)
+            throw new ArgumentException("Number of activation types must be less than the number of layers.");
+
+        for (int i = 1; i < layers.Count - activationTypes.Count; ++i) {
+            activationTypes.Insert(0, activationTypes[0]);
         }
-        Type = type;
-        Size = new int[size.Length];
-        for (int i = 0; i < size.Length; i++)
-            Size[i] = size[i];
 
-        Layers = new Layer[Size.Length - 1];
-
-        for (int i = 0; i < Layers.Length; i++) {
-            Layers[i] = new Layer(Size[i], Size[i + 1], Type);
+        Layers = new Layer[layers.Count - 1];
+        for (int i = 0; i < Layers.Length; ++i) {
+            Layers[i] = new Layer(layers[i], layers[i + 1], activationTypes[i], learningRate);
         }
+
+        Fitness = 0.0f;
     }
 
-    public NeuralNetwork(float[][,] weights, ActivationType type = ActivationType.SIGMOID) {
-        Type = type;
-        Size = new int[weights.Length + 1];
-        Size[0] = weights[0].GetLength(0);
-        for (int i = 1; i < Size.Length; i++)
-            Size[i] = weights[i - 1].GetLength(1);
+    /// <summary>
+    /// Copy a neural networks from a parent network.
+    /// </summary>
+    /// <param name="parent">The parent.</param>
+    public NeuralNetwork(NeuralNetwork parent) {
+        // Copy everything.
+        Layers = new Layer[parent.Layers.Length];
+        for (int i = 0; i < Layers.Length; ++i) {
+            Layers[i] = new Layer(parent.Layers[i]);
+        }
 
+        // Reset the fitness.
+        Fitness = 0.0f;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NeuralNetwork"/> class.
+    /// </summary>
+    /// <param name="weights">The weights to use for the neural network.</param>
+    /// <param name="activationTypes">The activation types for each layer.</param>
+    public NeuralNetwork(float[][,] weights, ActivationType[] activationTypes, float learningRate) {
+        // Create each layer of the network.
         Layers = new Layer[weights.Length];
-
-        for (int i = 0; i < Layers.Length; i++) {
-            Layers[i] = new Layer(weights[i], Type);
-        }
-    }
-
-    public float[][,] GetWeights() {
-        List<float[,]> arrArrWeights = new();
-
-        for (int i = 0; i < Layers.Length; i++) {
-            arrArrWeights.Add(Layers[i].Weights);
+        for (int i = 0; i < Layers.Length; ++i) {
+            Layers[i] = new Layer(weights[i].GetLength(1), weights[i].GetLength(0), activationTypes[i], learningRate);
+            Array.Copy(weights[i], Layers[i].Weights, weights[i].Length);
         }
 
-        return arrArrWeights.ToArray();
+        Fitness = 0.0f;
     }
 
+    /// <summary>
+    /// Feeds forward the inputs through all the layers of the neural network
+    /// and returns the output.
+    /// </summary>
+    /// <param name="inputs">The inputs to the neural network.</param>
     public float[] FeedForward(float[] inputs) {
-        Layers[0].FeedForward(inputs);
+        for (int i = 0; i < Layers.Length; ++i) {
+            inputs = Layers[i].FeedForward(inputs);
+        }
+        return inputs;
+    }
 
-        for (int i = 1; i < Layers.Length; i++)
-            Layers[i].FeedForward(Layers[i - 1].Outputs);
-
-        return Layers[Layers.Length - 1].Outputs;
+    /// <summary>
+    /// Mutates the weights of the neural network.
+    /// </summary>
+    public void Mutate() {
+        for (int i = 0; i < Layers.Length; i++) {
+            Layers[i].Mutate();
+        }
     }
 
     public void BackProp(float[] expected) {
-        Layers[Layers.Length - 1].BackPropOutput(expected);
-        for (int i = Layers.Length - 2; i > -1; i--)
-            Layers[i].BackPropHidden(Layers[i + 1].Gamma, Layers[i + 1].Weights);
+        Layers[^1].BackPropOutput(expected);
 
-        for (int i = 0; i < Layers.Length; i++)
+        for (int i = Layers.Length - 2; i >= 0; --i) {
+            Layers[i].BackPropHidden(Layers[i + 1].Gamma, Layers[i + 1].Weights);
+        }
+
+        for (int i = 0; i < Layers.Length; ++i) {
             Layers[i].UpdateWeights();
+        }
     }
 
-    public class Layer {
-        public int NumberOfInputs;
-        public int NumberOfOutputs;
+    public void BatchTrain(float[][] inputs, float[][] expected) {
+        for (int j = 0; j < inputs.Length; ++j) {
+            var prevOutputs = inputs[j];
+            for (int i = 0; i < Layers.Length; ++i) {
+                prevOutputs = Layers[i].FeedForward(prevOutputs);
+            }
 
-        public float[] Inputs;
-        public float[] Outputs;
-        public float[,] Weights;
-        public float[,] WeightsDelta;
-        public float[] Gamma;
-        public float[] Error;
+            Layers[^1].BackPropOutput(expected[j]);
 
-        public Func<float, float> ActivationFunc;
-        public Func<float, float> ActivationFuncDer;
-
-        public static System.Random random = new System.Random();
-        public static float LearningRate = 0.01f;
-
-        public Layer(int numberOfInputs, int numberOfOutputs, ActivationType type) {
-            NumberOfInputs = numberOfInputs;
-            NumberOfOutputs = numberOfOutputs;
-
-            Inputs = new float[NumberOfInputs];
-            Outputs = new float[NumberOfOutputs];
-            Weights = new float[NumberOfOutputs, NumberOfInputs];
-            WeightsDelta = new float[NumberOfOutputs, NumberOfInputs];
-            Gamma = new float[NumberOfOutputs];
-            Error = new float[NumberOfOutputs];
-
-            ActivationFunc = Activation.GetFunc(type);
-            ActivationFuncDer = Activation.GetFuncDer(type);
-
-            InitializeWeights();
+            for (int i = Layers.Length - 2; i >= 0; --i) {
+                Layers[i].BackPropHidden(Layers[i + 1].Gamma, Layers[i + 1].Weights);
+            }
         }
 
-        public Layer(float[,] weights, ActivationType type) {
-            NumberOfInputs = weights.GetLength(0);
-            NumberOfOutputs = weights.GetLength(1);
+        for (int i = 0; i < Layers.Length; ++i) {
+            Layers[i].UpdateWeights();
+        }
+    }
 
-            Inputs = new float[NumberOfInputs];
-            Outputs = new float[NumberOfOutputs];
-            Weights = weights;
-            WeightsDelta = new float[NumberOfOutputs, NumberOfInputs];
-            Gamma = new float[NumberOfOutputs];
-            Error = new float[NumberOfOutputs];
+    public static NeuralNetwork LoadFromFile(string path) {
+        var lines = File.ReadAllLines(path);
+        List<int> layers = new();
+        for (int i = 0; i < lines[0].Length; ++i) {
+            // Is this a digit?
+            if (char.IsDigit(lines[0][i])) {
+                // Get the number of digits in the number.
+                int j = i + 1;
+                for (; j < lines[0].Length; ++j) {
+                    // Is this not a digit?
+                    if (!char.IsDigit(lines[0][j])) {
+                        break;
+                    }
+                }
 
-            ActivationFunc = Activation.GetFunc(type);
-            ActivationFuncDer = Activation.GetFuncDer(type);
+                // Parse the number.
+                var num = int.Parse(lines[0].Substring(i, j - i));
+                layers.Add(num);
+                i = j;
+            }
         }
 
-        private void InitializeWeights() {
-            for (int i = 0; i < NumberOfOutputs; i++) {
-                for (int j = 0; j < NumberOfInputs; j++) {
-                    Weights[i, j] = (float)random.NextDouble() - 0.5f;
+        // Setup the weight array.
+        float[][,] weights = new float[layers.Count - 1][,];
+        float[][] biases = new float[layers.Count - 1][];
+        for (int i = 0; i < weights.Length; ++i) {
+            weights[i] = new float[layers[i + 1], layers[i]];
+            biases[i] = new float[layers[i + 1]];
+        }
+
+        // Get the weights and biases.
+        int w = 0, y = 0;
+        for (int i = 1; i < lines.Length; ++i) {
+            // # lines indicate the start of a new weight matrix.
+            if (lines[i] == "#") {
+                Trace.Assert(y == weights[w].GetLength(0));
+                y = 0;
+                ++w;
+                continue;
+            }
+
+            // Go through all the characters in each line.
+            int x = 0;
+            for (int j = 0; j < lines[i].Length; ++j) {
+                // Is this the start of a weight?
+                if (char.IsDigit(lines[i][j]) || lines[i][j] == '-') {
+                    int k = j + 1;
+                    for (; k < lines[i].Length; ++k) {
+                        // Is this the end of a weight?
+                        if (lines[i][k] == ' ') {
+                            break;
+                        }
+                    }
+
+                    // Parse the number.
+                    var subst = lines[i].Substring(j, k - j);
+                    var weight = float.Parse(subst);
+                    if (x < weights[w].GetLength(1)) {
+                        weights[w][y, x] = weight;
+                        ++x;
+                    }
+                    else {
+                        biases[w][y] = weight;
+                    }
+                    j = k;
                 }
             }
+            Trace.Assert(x == weights[w].GetLength(1) + 1);
+            ++y;
         }
 
-        public float[] FeedForward(float[] inputs) {
-            Inputs = inputs;
-
-            for (int i = 0; i < NumberOfOutputs; i++) {
-                Outputs[i] = 0;
-                for (int j = 0; j < NumberOfInputs; j++)
-                    Outputs[i] += Inputs[j] * Weights[i, j];
-
-                Outputs[i] = ActivationFunc(Outputs[i]);
-            }
-            return Outputs;
+        // Get the activation types.
+        ActivationType[] activationTypes = new ActivationType[layers.Count - 1];
+        for (int i = 0; i < activationTypes.Length; ++i) {
+            activationTypes[i] = (ActivationType)Enum.Parse(typeof(ActivationType), lines[lines.Length - activationTypes.Length + i]);
         }
 
-        public void BackProp(float[] expected) {
-            for (int i = 0; i < NumberOfOutputs; i++)
-                Error[i] = expected[i] - Outputs[i];
+        // Get the learning rate.
+        float learningRate = float.Parse(lines[^1]);
 
-            for (int i = 0; i < NumberOfInputs; i++)
-                Gamma[i] = 0;
+        return new NeuralNetwork(weights, activationTypes, learningRate);
+    }
 
-            for (int i = 0; i < NumberOfOutputs; i++) {
-                for (int j = 0; j < NumberOfInputs; j++) {
-                    Gamma[j] += Weights[i, j] * Error[i];
-                    WeightsDelta[i, j] = Error[i] * ActivationFuncDer(Outputs[i]);
+    public void SaveToFile(string path) {
+        // Specify the layer sizes.
+        StringBuilder sb = new("{");
+        for (int i = 0; i < Layers.Length; i++) {
+            sb.Append(Layers[i].numberOfInputs);
+            sb.Append(',');
+        }
+        sb.Append(Layers[^1].numberOfOutputs);
+        sb.Append('}');
+        sb.AppendLine();
+
+        // Get the weights and biases.
+        for (int i = 0; i < Layers.Length; i++) {
+            for (int j = 0; j < Layers[i].numberOfOutputs; j++) {
+                for (int k = 0; k < Layers[i].numberOfInputs; k++) {
+                    sb.Append(Layers[i].Weights[j, k]);
+                    sb.Append(' ');
                 }
+                sb.Append(Layers[i].Biases[j]);
+                sb.AppendLine();
             }
+            sb.Append('#');
+            sb.AppendLine();
         }
 
-        public void BackPropOutput(float[] expected) {
-            for (int i = 0; i < NumberOfOutputs; i++)
-                Error[i] = Outputs[i] - expected[i];
-
-            for (int i = 0; i < NumberOfOutputs; i++)
-                Gamma[i] = Error[i] * ActivationFuncDer(Outputs[i]);
-
-            for (int i = 0; i < NumberOfOutputs; i++)
-                for (int j = 0; j < NumberOfInputs; j++)
-                    WeightsDelta[i, j] = Gamma[i] * Inputs[j];
+        // Write the activation types.
+        for (int i = 0; i < Layers.Length; i++) {
+            sb.AppendLine(Layers[i].ActivationType.ToString());
         }
 
-        public void BackPropHidden(float[] gammaForward, float[,] weightsForward) {
-            for (int i = 0; i < NumberOfOutputs; i++) {
-                Gamma[i] = 0;
+        // Write the learning rate.
+        sb.AppendLine(Layers[0].LearningRate.ToString());
 
-                for (int j = 0; j < gammaForward.Length; j++)
-                    Gamma[i] += gammaForward[j] * weightsForward[j, i];
+        // Write the weights to the file at the given path.
+        using StreamWriter file = new(path);
+        file.Write(sb.ToString());
+    }
 
-                Gamma[i] *= Outputs[i];
-            }
+    /// <summary>
+    /// Compares the fitness of two neural networks.
+    /// </summary>
+    /// <param name="other">The other neural network.</param>
+    /// <returns>An integer indicating the comparison result.</returns>
+    public int CompareTo(NeuralNetwork? other) {
+        if (other == null)
+            throw new NullReferenceException();
 
-            for (int i = 0; i < NumberOfOutputs; i++)
-                for (int j = 0; j < NumberOfInputs; j++)
-                    WeightsDelta[i, j] = Gamma[i] * Inputs[j];
-        }
-
-        public void UpdateWeights() {
-            for (int i = 0; i < NumberOfOutputs; i++) {
-                for (int j = 0; j < NumberOfInputs; j++) {
-                    Weights[i, j] -= WeightsDelta[i, j] * LearningRate;
-                }
-            }
-        }
+        if (Fitness > other.Fitness)
+            return 1;
+        else if (Fitness < other.Fitness)
+            return -1;
+        else
+            return 0;
     }
 }

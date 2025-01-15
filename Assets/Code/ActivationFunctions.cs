@@ -1,64 +1,88 @@
 ﻿using System;
-using UnityEngine;
+using System.Linq;
 
 public enum ActivationType {
+    NONE,
     SIGMOID,
     RELU,
-    ELU
+    SOFTMAX
 }
 
-public static class Activation {
-    public static Func<float, float> GetFunc(ActivationType type) {
+public static class Functions {
+    public static Func<float[], float[]> GetActivation(ActivationType type) {
         return type switch {
             ActivationType.SIGMOID => Sigmoid,
             ActivationType.RELU => ReLU,
-            ActivationType.ELU => ELU,
-            _ => throw new ArgumentException("Unknown activation type"),
+            ActivationType.SOFTMAX => Softmax,
+            _ => (input) => input,
         };
     }
 
-    public static Func<float, float> GetFuncDer(ActivationType type) {
+    public static Func<float[], float[]> GetActivationDerivative(ActivationType type) {
         return type switch {
-            ActivationType.SIGMOID => SigmoidDer,
-            ActivationType.RELU => ReLUDer,
-            ActivationType.ELU => ELUDer,
-            _ => throw new ArgumentException("Unknown activation type"),
+            ActivationType.SIGMOID => SigmoidDerivative,
+            ActivationType.RELU => ReLUDerivative,
+            ActivationType.SOFTMAX => SoftmaxDerivative,
+            _ => (inputs) => Enumerable.Repeat(1.0f, inputs.Length).ToArray(),
         };
     }
 
-    public static float Sigmoid(float value) {
-        return 1 / (1 + Mathf.Pow((float)Math.E, -value));
+    public static float[] Softmax(float[] inputs) {
+        float[] exps = inputs.Select(i => (float)Math.Exp(i)).ToArray();
+        float sum = exps.Sum();
+        return exps.Select(i => i / sum).ToArray();
     }
 
-    public static float SigmoidDer(float value) {
-        return value * (1 - value);
+    public static float[] SoftmaxDerivative(float[] outputs) {
+        // The derivative is the same as the sigmoid derivative apparently.
+        return outputs.Select(SigmoidDerivative).ToArray();
     }
 
-    public static float ReLU(float value) {
-        if (value >= 0)
-            return value;
-        else
-            return 0;
+    public static int ArgMax(float[] input) {
+        int maxIndex = 0;
+        for (int i = 1; i < input.Length; i++) {
+            if (input[i] > input[maxIndex]) {
+                maxIndex = i;
+            }
+        }
+        return maxIndex;
     }
 
-    public static float ReLUDer(float value) {
-        if (value >= 0)
-            return 1;
-        else
-            return 0;
+    public static float[] InverseArgMax(int index, int length) {
+        float[] result = new float[length];
+        result[index] = 1;
+        return result;
     }
 
-    public static float ELU(float value) {
-        if (value >= 0)
-            return value;
-        else
-            return Mathf.Pow((float)Math.E, value) + 1;
+    public static float Sigmoid(float input) {
+        return 1 / (1 + (float)Math.Exp(-input));
     }
 
-    public static float ELUDer(float value) {
-        if (value >= 0)
-            return 1;
-        else
-            return value + 1;
+    public static float[] Sigmoid(float[] inputs) {
+        return inputs.Select(Sigmoid).ToArray();
+    }
+
+    public static float SigmoidDerivative(float output) {
+        return output * (1 - output);
+    }
+
+    public static float[] SigmoidDerivative(float[] outputs) {
+        return outputs.Select(SigmoidDerivative).ToArray();
+    }
+
+    public static float ReLU(float input) {
+        return Math.Max(0, input);
+    }
+
+    public static float[] ReLU(float[] inputs) {
+        return inputs.Select(ReLU).ToArray();
+    }
+
+    public static float ReLUDerivative(float output) {
+        return output > 0 ? 1 : 0;
+    }
+
+    public static float[] ReLUDerivative(float[] outputs) {
+        return outputs.Select(ReLUDerivative).ToArray();
     }
 }
