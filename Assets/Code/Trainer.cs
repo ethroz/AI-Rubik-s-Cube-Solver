@@ -70,19 +70,19 @@ public class Trainer : MonoBehaviour {
             Debug.Log(Cube.GetStateString());
         }
 
-        var userDirection = Input.GetKey(KeyCode.LeftShift) ? -1 : 1;
+        var clockwise = !Input.GetKey(KeyCode.LeftShift);
         if (Input.GetKeyDown(KeyCode.Q))
-            Cube.BottomLayer(userDirection);
+            Cube.BottomLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.W))
-            Cube.BackLayer(userDirection);
+            Cube.BackLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.E))
-            Cube.TopLayer(userDirection);
+            Cube.TopLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.A))
-            Cube.LeftLayer(userDirection);
+            Cube.LeftLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.S))
-            Cube.FrontLayer(userDirection);
+            Cube.FrontLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.D))
-            Cube.RightLayer(userDirection);
+            Cube.RightLayer(clockwise);
         if (Input.GetKeyDown(KeyCode.X))
             Cube.Scramble();
     }
@@ -123,42 +123,26 @@ public class Trainer : MonoBehaviour {
     }
 
     private void PerformAction(int action) {
-        switch (action) {
-            case 0:
-                Cube.BottomLayer(1);
-                break;
+        var clockwise = action % 2 == 1;
+        var face = action / 2 + 1;
+        switch (face) {
             case 1:
-                Cube.BottomLayer(-1);
+                Cube.TopLayer(clockwise);
                 break;
             case 2:
-                Cube.BackLayer(1);
+                Cube.LeftLayer(clockwise);
                 break;
             case 3:
-                Cube.BackLayer(-1);
+                Cube.FrontLayer(clockwise);
                 break;
             case 4:
-                Cube.TopLayer(1);
+                Cube.RightLayer(clockwise);
                 break;
             case 5:
-                Cube.TopLayer(-1);
+                Cube.BackLayer(clockwise);
                 break;
             case 6:
-                Cube.LeftLayer(1);
-                break;
-            case 7:
-                Cube.LeftLayer(-1);
-                break;
-            case 8:
-                Cube.FrontLayer(1);
-                break;
-            case 9:
-                Cube.FrontLayer(-1);
-                break;
-            case 10:
-                Cube.RightLayer(1);
-                break;
-            case 11:
-                Cube.RightLayer(-1);
+                Cube.BottomLayer(clockwise);
                 break;
         }
     }
