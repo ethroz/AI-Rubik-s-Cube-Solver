@@ -116,7 +116,7 @@ public class VirtualCube {
         // Rotate the face
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                state[0, i, j] = clockwise ? temp[2 - j, i] : temp[j, 2 - i];
+                state[(int)face, i, j] = clockwise ? temp[2 - j, i] : temp[j, 2 - i];
             }
         }
     }

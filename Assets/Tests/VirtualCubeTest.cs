@@ -82,9 +82,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.FrontLayer(true);
         var expected = new string[] {
-            "YYY BBW RRR YGG OOO GGG",
             "YYY BBW RRR YGG OOO WWW",
-            "BBB BBW RRR YGG OOO WWW",
+            "YYY BBW RRR YGG OOO WWW",
+            "BBB BBW RRR YGG OOO GGG",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -95,9 +95,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.FrontLayer(false);
         var expected = new string[] {
-            "YYY BBY RRR WGG OOO BBB",
             "YYY BBY RRR WGG OOO WWW",
-            "GGG BBY RRR WGG OOO WWW",
+            "YYY BBY RRR WGG OOO WWW",
+            "GGG BBY RRR WGG OOO BBB",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
