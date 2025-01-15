@@ -64,9 +64,10 @@ public class Trainer : MonoBehaviour {
 
 
         if (Input.GetKeyDown(KeyCode.Space)) {
-            IsTraining = true;
-            Debug.Log("Training started");
-            return;
+            // IsTraining = true;
+            // Debug.Log("Training started");
+            // return;
+            Debug.Log(Cube.GetStateString());
         }
 
         var userDirection = Input.GetKey(KeyCode.LeftShift) ? -1 : 1;

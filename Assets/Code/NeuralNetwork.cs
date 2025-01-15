@@ -15,8 +15,13 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
     /// <param name="layers">The layers of the neural network.</param>
     /// <param name="activationTypes">The activation types for each layer.</param>
     public NeuralNetwork(List<int> layers, List<ActivationType> activationTypes, float learningRate = 0.01f) {
-        if (activationTypes.Count >= layers.Count)
-            throw new ArgumentException("Number of activation types must be less than the number of layers.");
+        if (layers.Count < 2) {
+            throw new ArgumentException("There must be at least two layers in the neural network.");
+        }
+        
+        while (activationTypes.Count >= layers.Count) {
+            activationTypes.RemoveAt(activationTypes.Count - 2);
+        }
 
         for (int i = 1; i < layers.Count - activationTypes.Count; ++i) {
             activationTypes.Insert(0, activationTypes[0]);

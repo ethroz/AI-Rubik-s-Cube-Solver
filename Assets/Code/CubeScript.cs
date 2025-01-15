@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using UnityEngine;
 
 public enum Color {
@@ -28,7 +29,7 @@ public class CubeScript : MonoBehaviour {
     private GameObject[,,] Cubes = new GameObject[3, 3, 3];
     private Color[,,] CurrentColors = new Color[6, 3, 3];
 
-    void Start() {
+    void Awake() {
         Cubes[0, 2, 0] = GameObject.Find("/Cube/TopFrontLeft");
         Cubes[1, 2, 0] = GameObject.Find("/Cube/TopFront");
         Cubes[2, 2, 0] = GameObject.Find("/Cube/TopFrontRight");
@@ -69,6 +70,32 @@ public class CubeScript : MonoBehaviour {
 
     public Color[,,] GetState() {
         return CurrentColors;
+    }
+
+    private static char GetColorChar(Color color) {
+        return color switch {
+            Color.YELLOW => 'Y',
+            Color.BLUE => 'B',
+            Color.RED => 'R',
+            Color.GREEN => 'G',
+            Color.ORANGE => 'O',
+            Color.WHITE => 'W',
+            _ => throw new ArgumentException("Invalid color"),
+        };
+    }
+
+    public string GetStateString() {
+        StringBuilder sb = new();
+        for (int j = 2; j >= 0; j--) {
+            for (int i = 0; i < 6; i++) {
+                for (int k = 0; k < 3; k++) {
+                    sb.Append(GetColorChar(CurrentColors[i, j, k]));
+                }
+                sb.Append(' ');
+            }
+            sb.AppendLine();
+        }
+        return sb.ToString();
     }
 
     public void TopLayer(float direction) {
