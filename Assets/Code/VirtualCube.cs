@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Concurrent;
 using System.Text;
-using UnityEngine;
 
 public enum Color {
     YELLOW = 0,
@@ -132,9 +130,11 @@ public class VirtualCube {
             (Face.FRONT, Edge.TOP),
             (Face.LEFT, Edge.TOP),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
@@ -147,9 +147,11 @@ public class VirtualCube {
             (Face.BOTTOM, Edge.LEFT),
             (Face.BACK, Edge.LEFT),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
@@ -162,9 +164,11 @@ public class VirtualCube {
             (Face.BOTTOM, Edge.BOTTOM),
             (Face.LEFT, Edge.RIGHT),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
@@ -177,9 +181,11 @@ public class VirtualCube {
             (Face.BOTTOM, Edge.RIGHT),
             (Face.FRONT, Edge.RIGHT),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
@@ -192,9 +198,11 @@ public class VirtualCube {
             (Face.BOTTOM, Edge.TOP),
             (Face.LEFT, Edge.LEFT),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
@@ -207,9 +215,11 @@ public class VirtualCube {
             (Face.FRONT, Edge.BOTTOM),
             (Face.LEFT, Edge.BOTTOM),
         };
-        var offset = clockwise ? 3 : 1;
-        for (int i = 0; i < 4; ++i) {
-            SwapEdges(order[i].Item1, order[i].Item2, order[(i + offset) % 4].Item1, order[(i + offset) % 4].Item2);
+        if (clockwise) {
+            Array.Reverse(order);
+        }
+        for (int i = 0; i < 3; ++i) {
+            SwapEdges(order[i].Item1, order[i].Item2, order[i + 1].Item1, order[i + 1].Item2);
         }
     }
 
