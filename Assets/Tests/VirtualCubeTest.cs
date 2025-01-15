@@ -26,7 +26,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestTopLayerClockwise() {
+    public void TopLayerClockwise() {
         VirtualCube cube = new();
         cube.TopLayer(true);
         var expected = new string[] {
@@ -39,7 +39,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestTopLayerCounterClockwise() {
+    public void TopLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.TopLayer(false);
         var expected = new string[] {
@@ -52,7 +52,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestLeftLayerClockwise() {
+    public void LeftLayerClockwise() {
         VirtualCube cube = new();
         cube.LeftLayer(true);
         var expected = new string[] {
@@ -65,7 +65,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestLeftLayerCounterClockwise() {
+    public void LeftLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.LeftLayer(false);
         var expected = new string[] {
@@ -78,7 +78,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestFrontLayerClockwise() {
+    public void FrontLayerClockwise() {
         VirtualCube cube = new();
         cube.FrontLayer(true);
         var expected = new string[] {
@@ -91,7 +91,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestFrontLayerCounterClockwise() {
+    public void FrontLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.FrontLayer(false);
         var expected = new string[] {
@@ -104,7 +104,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestRightLayerClockwise() {
+    public void RightLayerClockwise() {
         VirtualCube cube = new();
         cube.RightLayer(true);
         var expected = new string[] {
@@ -117,7 +117,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestRightLayerCounterClockwise() {
+    public void RightLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.RightLayer(false);
         var expected = new string[] {
@@ -130,7 +130,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestBackLayerClockwise() {
+    public void BackLayerClockwise() {
         VirtualCube cube = new();
         cube.BackLayer(true);
         var expected = new string[] {
@@ -143,7 +143,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestBackLayerCounterClockwise() {
+    public void BackLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.BackLayer(false);
         var expected = new string[] {
@@ -156,7 +156,7 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestBottomLayerClockwise() {
+    public void BottomLayerClockwise() {
         VirtualCube cube = new();
         cube.BottomLayer(true);
         var expected = new string[] {
@@ -169,13 +169,27 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void VirtualCubeTestBottomLayerCounterClockwise() {
+    public void BottomLayerCounterClockwise() {
         VirtualCube cube = new();
         cube.BottomLayer(false);
         var expected = new string[] {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
             "YYY OOO BBB RRR GGG WWW",
+        };
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        CollectionAssert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void TopThenLeft() {
+        VirtualCube cube = new();
+        cube.TopLayer(true);
+        cube.LeftLayer(true);
+        var expected = new string[] {
+            "YYY RRR GGG OOO BBB WWW",
+            "YYY BBB RRR GGG OOO WWW",
+            "YYY BBB RRR GGG OOO WWW",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
