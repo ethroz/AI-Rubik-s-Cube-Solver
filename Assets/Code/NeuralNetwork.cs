@@ -55,7 +55,7 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
     /// </summary>
     /// <param name="weights">The weights to use for the neural network.</param>
     /// <param name="activationTypes">The activation types for each layer.</param>
-    public NeuralNetwork(float[][,] weights, ActivationType[] activationTypes, float learningRate) {
+    private NeuralNetwork(float[][,] weights, ActivationType[] activationTypes, float learningRate) {
         // Create each layer of the network.
         Layers = new Layer[weights.Length];
         for (int i = 0; i < Layers.Length; ++i) {

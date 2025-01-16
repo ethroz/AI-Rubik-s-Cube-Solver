@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+using NUnit.Framework;
 
-public class Tester : MonoBehaviour {
-    void Start() {
+public class NeuralNetworkTest {
+    [Test]
+    public void SimpleXOR() {
         // 0 0 0    => 0
         // 0 0 1    => 1
         // 0 1 0    => 1
@@ -13,7 +13,7 @@ public class Tester : MonoBehaviour {
         // 1 1 1    => 1
 
         NeuralNetwork net = new(
-            new List<int>() { 3, 10, 1 },
+            new() { 3, 10, 1 },
             new() { ActivationType.RELU, ActivationType.SIGMOID },
             0.5f
         );
@@ -40,13 +40,13 @@ public class Tester : MonoBehaviour {
             });
         }
 
-        Debug.Log(net.FeedForward(new float[] { 0, 0, 0 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 0, 0, 1 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 0, 1, 0 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 0, 1, 1 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 1, 0, 0 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 1, 0, 1 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 1, 1, 0 })[0]);
-        Debug.Log(net.FeedForward(new float[] { 1, 1, 1 })[0]);
+        Assert2.AreNear(0, net.FeedForward(new float[] { 0, 0, 0 })[0], 0.1f);
+        Assert2.AreNear(1, net.FeedForward(new float[] { 0, 0, 1 })[0], 0.1f);
+        Assert2.AreNear(1, net.FeedForward(new float[] { 0, 1, 0 })[0], 0.1f);
+        Assert2.AreNear(0, net.FeedForward(new float[] { 0, 1, 1 })[0], 0.1f);
+        Assert2.AreNear(1, net.FeedForward(new float[] { 1, 0, 0 })[0], 0.1f);
+        Assert2.AreNear(0, net.FeedForward(new float[] { 1, 0, 1 })[0], 0.1f);
+        Assert2.AreNear(0, net.FeedForward(new float[] { 1, 1, 0 })[0], 0.1f);
+        Assert2.AreNear(1, net.FeedForward(new float[] { 1, 1, 1 })[0], 0.1f);
     }
 }
