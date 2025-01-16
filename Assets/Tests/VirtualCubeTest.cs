@@ -11,7 +11,7 @@ public class VirtualCubeTest {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -24,7 +24,7 @@ public class VirtualCubeTest {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -37,7 +37,7 @@ public class VirtualCubeTest {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -50,7 +50,7 @@ public class VirtualCubeTest {
             "OYY BBB YRR GGG OOW RWW",
             "OYY BBB YRR GGG OOW RWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -63,7 +63,7 @@ public class VirtualCubeTest {
             "RYY BBB WRR GGG OOY OWW",
             "RYY BBB WRR GGG OOY OWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -76,7 +76,7 @@ public class VirtualCubeTest {
             "YYY BBW RRR YGG OOO WWW",
             "BBB BBW RRR YGG OOO WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -89,7 +89,7 @@ public class VirtualCubeTest {
             "YYY BBY RRR WGG OOO WWW",
             "GGG BBY RRR WGG OOO WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -102,7 +102,7 @@ public class VirtualCubeTest {
             "YYR BBB RRW GGG YOO WWO",
             "YYR BBB RRW GGG YOO WWO",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -115,7 +115,7 @@ public class VirtualCubeTest {
             "YYO BBB RRY GGG WOO WWR",
             "YYO BBB RRY GGG WOO WWR",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -128,7 +128,7 @@ public class VirtualCubeTest {
             "YYY WBB RRR GGY OOO WWW",
             "YYY WBB RRR GGY OOO GGG",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -141,7 +141,7 @@ public class VirtualCubeTest {
             "YYY YBB RRR GGW OOO WWW",
             "YYY YBB RRR GGW OOO BBB",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -154,7 +154,7 @@ public class VirtualCubeTest {
             "YYY BBB RRR GGG OOO WWW",
             "YYY RRR GGG OOO BBB WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -167,7 +167,7 @@ public class VirtualCubeTest {
             "YYY BBB RRR GGG OOO WWW",
             "YYY OOO BBB RRR GGG WWW",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -182,7 +182,7 @@ public class VirtualCubeTest {
             "OYY WBR YRR GGY BOO RWW",
             "BYY WBR YRR GGY BOO GGO",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -197,7 +197,7 @@ public class VirtualCubeTest {
             "YYO BBY RRR WGG WOO WWB",
             "GGG WOO BBY RRR WGG RRB",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 
@@ -219,7 +219,7 @@ public class VirtualCubeTest {
             "RYW RBW RRG YGO YOY BWO",
             "RGO RRG YOW BWW GYY BBO",
         };
-        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
     }
 }

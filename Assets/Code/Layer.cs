@@ -156,7 +156,7 @@ public class Layer {
         var weights = new List<float[]>();
         string line;
         while ((line = stream.ReadLine()) != "#") {
-            var weightRow = line.Split(' ').SkipLast(1).Select(float.Parse).ToArray();
+            var weightRow = line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(float.Parse).ToArray();
             weights.Add(weightRow);
         }
 
@@ -171,7 +171,7 @@ public class Layer {
         }
 
         // Read the biases
-        var biases = stream.ReadLine().Split(' ').SkipLast(1).Select(float.Parse).ToArray();
+        var biases = stream.ReadLine().Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(float.Parse).ToArray();
 
         // Create and return the layer
         return new Layer(weightsArray, biases, activationType, learningRate);

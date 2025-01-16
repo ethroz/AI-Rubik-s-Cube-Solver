@@ -17,7 +17,7 @@ public class Trainer : MonoBehaviour {
     // public bool UseSavedWeights = true;
     private NeuralNetwork Network;
     private static readonly int InputSize = 3 * 3 * 6 * 6;
-    public int[] NeuralNetHiddenLayers = new int[0];
+    public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
     private static readonly int OutputSize = 6 * 2;
     public float LearningRate = 0.01f;
     public int MaxIterations = 500;
@@ -150,68 +150,5 @@ public class Trainer : MonoBehaviour {
     private int CalculateExpectedAction() {
         // TODO
         return 0;
-    }
-
-    // File I/O
-
-    public (float[][,], ActivationType) LoadWeights() {
-        var lines = File.ReadAllLines(WeightsPath);
-
-        var type = (ActivationType)System.Enum.Parse(typeof(ActivationType), lines[1]);
-        var layers = lines[2].Split(' ');
-        var layerSizes = new int[layers.Length];
-        for (int i = 0; i < layers.Length; i++) {
-            layerSizes[i] = int.Parse(layers[i]);
-        }
-        
-        var weights = new float[layers.Length - 1][,];
-        int line = 4;
-        for (int i = 0; i < weights.Length; i++) {
-            var width = layerSizes[i];
-            var height = layerSizes[i + 1];
-            weights[i] = new float[width, height];
-            for (int j = 0; j < width; j++) {
-                var values = lines[line].Split(' ');
-                for (int k = 0; k < height; k++) {
-                    weights[i][j, k] = float.Parse(values[k]);
-                }
-                line++;
-            }
-            line++;
-        }
-
-        return (weights, type);
-    }
-
-    public void SaveWeights(float[][,] weights, ActivationType type) {
-        StringBuilder buffer = new();
-        buffer.Append("####### ");
-        var time = System.DateTime.Now.ToLocalTime();
-        buffer.Append(time);
-        buffer.AppendLine(" #######");
-
-        buffer.AppendLine(type.ToString());
-
-        buffer.Append(weights[0].GetLength(0));
-        buffer.Append(' ');
-        for (int i = 0; i < weights.Length; i++) {
-            buffer.Append(weights[i].GetLength(1));
-            buffer.Append(' ');
-        }
-        buffer.AppendLine();
-        buffer.AppendLine();
-
-        for (int i = 0; i < weights.Length; i++) {
-            for (int j = 0; j < weights[i].GetLength(0); j++) {
-                for (int k = 0; k < weights[i].GetLength(1); k++) {
-                    buffer.Append(weights[i][j,k]);
-                    buffer.Append(' ');
-                }
-                buffer.AppendLine();
-            }
-            buffer.AppendLine();
-        }
-
-        File.WriteAllText(WeightsPath, buffer.ToString());
     }
 }

@@ -57,6 +57,34 @@ public class VirtualCube {
         }
     }
 
+    public VirtualCube(string stateString) {
+        var lines = stateString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length != 3) {
+            throw new ArgumentException("Invalid state string");
+        }
+
+        for (int j = 0; j < 3; ++j) {
+            var line = lines[j];
+            if (line.Length != 18) {
+                throw new ArgumentException("Invalid state string");
+            }
+
+            for (int i = 0; i < 6; ++i) {
+                for (int k = 0; k < 3; ++k) {
+                    state[i, j, k] = line[i * 3 + k] switch {
+                        'Y' => Color.YELLOW,
+                        'B' => Color.BLUE,
+                        'R' => Color.RED,
+                        'G' => Color.GREEN,
+                        'O' => Color.ORANGE,
+                        'W' => Color.WHITE,
+                        _ => throw new ArgumentException("Invalid color"),
+                    };
+                }
+            }
+        }
+    }
+
     public Color[,,] GetState() {
         return state;
     }
