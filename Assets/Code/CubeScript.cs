@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 public class CubeScript : MonoBehaviour {
-    private readonly GameObject[,,] Cubelets = new GameObject[3, 3, 3];
+    public readonly GameObject[,,] Cubelets = new GameObject[3, 3, 3];
     private readonly VirtualCube virtualCube = new();
 
     void Awake() {
