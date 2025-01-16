@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 public enum Color {
@@ -228,11 +229,32 @@ public class VirtualCube {
     }
 
     public int[] Scramble(int moves = 25) {
+        if (moves < 1) {
+            throw new ArgumentException("Number of moves must be positive");
+        }
+
         var movesArray = new int[moves];
-        for (int i = 0; i < moves; ++i) {
-            movesArray[i] = UnityEngine.Random.Range(0, 12);
-            var clockwise = movesArray[i] % 2 == 0;
-            var side = movesArray[i] / 2 + 1;
+        for (int i = 0; i < moves; i++) {
+            List<int> choices = new() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+            if (i >= 1) {
+                // Avoid placing opposite moves next to each other.
+                var prevNum = movesArray[i - 1];
+                var oppositePrevNum = prevNum + (prevNum % 2 == 0 ? 1 : -1);
+                choices.Remove(oppositePrevNum);
+            }
+            else if (i >= 2 && movesArray[i - 2] == movesArray[i - 1]) {
+                // Ensure there are no more than 2 of the same move in a row.
+                var prevNum = movesArray[i - 1];
+                choices.Remove(prevNum);
+            }
+
+            var index = UnityEngine.Random.Range(0, choices.Count);
+            movesArray[i] = choices[index];
+        }
+
+        foreach (var move in movesArray) {
+            var clockwise = move % 2 == 0;
+            var side = move / 2 + 1;
 
             switch (side) {
                 case 1:
@@ -255,6 +277,7 @@ public class VirtualCube {
                     break;
             }
         }
+
         return movesArray;
     }
 
