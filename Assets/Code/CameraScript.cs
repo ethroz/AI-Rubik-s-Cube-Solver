@@ -5,7 +5,7 @@ public class CameraScript : MonoBehaviour {
     public float CameraDistance = 5.0f;
     public float Sensitivity = 8;
     private float Pitch = 45;
-    private float Yaw = -45;
+    private float Yaw = 45;
 
     void Update() {
         if (Input.GetMouseButton(0)) {

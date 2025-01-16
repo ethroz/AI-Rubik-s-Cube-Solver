@@ -49,7 +49,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[i, 2, j].transform.RotateAround(Vector3.up, Vector3.up, angle);
+                Cubelets[i, 2, j].transform.RotateAround(gameObject.transform.position, gameObject.transform.up, angle);
                 face[i, j] = Cubelets[i, 2, j];
             }
         }
@@ -68,14 +68,14 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[0, i, j].transform.RotateAround(Vector3.back, Vector3.back, angle);
+                Cubelets[0, i, j].transform.RotateAround(gameObject.transform.position, -gameObject.transform.right, angle);
                 face[i, j] = Cubelets[0, i, j];
             }
         }
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[0, i, j] = clockwise ? face[j, 2 - i] : face[2 - j, i];
+                Cubelets[0, i, j] = clockwise ? face[2 - j, i] : face[j, 2 - i];
             }
         }
     }
@@ -87,7 +87,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[i, j, 0].transform.RotateAround(Vector3.right, Vector3.right, angle);
+                Cubelets[i, j, 0].transform.RotateAround(gameObject.transform.position, -gameObject.transform.forward, angle);
                 face[i, j] = Cubelets[i, j, 0];
             }
         }
@@ -106,7 +106,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[2, i, j].transform.RotateAround(Vector3.forward, Vector3.forward, angle);
+                Cubelets[2, i, j].transform.RotateAround(gameObject.transform.position, gameObject.transform.right, angle);
                 face[i, j] = Cubelets[2, i, j];
             }
         }
@@ -125,7 +125,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[i, j, 2].transform.RotateAround(Vector3.left, Vector3.right, angle);
+                Cubelets[i, j, 2].transform.RotateAround(gameObject.transform.position, -gameObject.transform.forward, angle);
                 face[i, j] = Cubelets[i, j, 2];
             }
         }
@@ -144,7 +144,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[i, 0, j].transform.RotateAround(Vector3.down, Vector3.up, angle);
+                Cubelets[i, 0, j].transform.RotateAround(gameObject.transform.position, gameObject.transform.up, angle);
                 face[i, j] = Cubelets[i, 0, j];
             }
         }
