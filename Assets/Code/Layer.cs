@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 /// <summary>
 /// A single layer of the neural network.
@@ -14,7 +17,7 @@ public class Layer {
     public float[] Error;
     public float[] Biases;
     public float[] BiasesDelta;
-    public float LearningRate = 0.01f;
+    public float LearningRate;
     public ActivationType ActivationType;
 
     private static readonly Random random = new();
@@ -48,7 +51,7 @@ public class Layer {
     /// <summary>
     /// Initializes a new instance of the <see cref="Layer"/> class.
     /// </summary>
-    public Layer(float[,] weights, float[] biases, ActivationType activationType, float learningRate) {
+    private Layer(float[,] weights, float[] biases, ActivationType activationType, float learningRate) {
         numberOfInputs = weights.GetLength(1);
         numberOfOutputs = weights.GetLength(0);
 
@@ -104,6 +107,74 @@ public class Layer {
             }
             Biases[i] = (float)random.NextDouble() - 0.5f;
         }
+    }
+
+    public void SaveToFile(StreamWriter stream) {
+        stream.WriteLine("##");
+        stream.WriteLine(ActivationType);
+        stream.WriteLine("#");
+        stream.WriteLine(LearningRate.ToString("G9"));
+        stream.WriteLine("#");
+        for (int i = 0; i < numberOfOutputs; ++i) {
+            for (int j = 0; j < numberOfInputs; ++j) {
+                stream.Write(Weights[i, j].ToString("G9"));
+                stream.Write(' ');
+            }
+            stream.WriteLine();
+        }
+        stream.WriteLine("#");
+        for (int i = 0; i < numberOfOutputs; ++i) {
+            stream.Write(Biases[i].ToString("G9"));
+            stream.Write(' ');
+        }
+        stream.WriteLine();
+    }
+
+    public static Layer LoadFromFile(StreamReader stream) {
+        // Read and validate the header
+        if (stream.ReadLine() != "##") {
+            return null;
+        }
+
+        // Read the activation type
+        ActivationType activationType = (ActivationType)Enum.Parse(typeof(ActivationType), stream.ReadLine());
+
+        // Read and validate the separator
+        if (stream.ReadLine() != "#") {
+            throw new InvalidDataException("Invalid file format");
+        }
+
+        // Read the learning rate
+        float learningRate = float.Parse(stream.ReadLine());
+
+        // Read and validate the separator
+        if (stream.ReadLine() != "#") {
+            throw new InvalidDataException("Invalid file format");
+        }
+
+        // Read the weights
+        var weights = new List<float[]>();
+        string line;
+        while ((line = stream.ReadLine()) != "#") {
+            var weightRow = line.Split(' ').SkipLast(1).Select(float.Parse).ToArray();
+            weights.Add(weightRow);
+        }
+
+        // Convert weights to 2D array
+        int numberOfOutputs = weights.Count;
+        int numberOfInputs = weights[0].Length;
+        float[,] weightsArray = new float[numberOfOutputs, numberOfInputs];
+        for (int i = 0; i < numberOfOutputs; i++) {
+            for (int j = 0; j < numberOfInputs; j++) {
+                weightsArray[i, j] = weights[i][j];
+            }
+        }
+
+        // Read the biases
+        var biases = stream.ReadLine().Split(' ').SkipLast(1).Select(float.Parse).ToArray();
+
+        // Create and return the layer
+        return new Layer(weightsArray, biases, activationType, learningRate);
     }
 
     /// <summary>

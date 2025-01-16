@@ -1,12 +1,10 @@
-﻿#nullable enable
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Linq;
 
 public class NeuralNetwork : IComparable<NeuralNetwork> {
-    private readonly Layer[] Layers;
+    public readonly Layer[] Layers;
     public float Fitness;
 
     /// <summary>
@@ -36,6 +34,15 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="NeuralNetwork"/> class.
+    /// </summary>
+    /// <param name="layers">The layers of the neural network.</param>
+    private NeuralNetwork(Layer[] layers) {
+        Layers = layers;
+        Fitness = 0.0f;
+    }
+
+    /// <summary>
     /// Copy a neural networks from a parent network.
     /// </summary>
     /// <param name="parent">The parent.</param>
@@ -47,22 +54,6 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
         }
 
         // Reset the fitness.
-        Fitness = 0.0f;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NeuralNetwork"/> class.
-    /// </summary>
-    /// <param name="weights">The weights to use for the neural network.</param>
-    /// <param name="activationTypes">The activation types for each layer.</param>
-    private NeuralNetwork(float[][,] weights, ActivationType[] activationTypes, float learningRate) {
-        // Create each layer of the network.
-        Layers = new Layer[weights.Length];
-        for (int i = 0; i < Layers.Length; ++i) {
-            Layers[i] = new Layer(weights[i].GetLength(1), weights[i].GetLength(0), activationTypes[i], learningRate);
-            Array.Copy(weights[i], Layers[i].Weights, weights[i].Length);
-        }
-
         Fitness = 0.0f;
     }
 
@@ -87,6 +78,10 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
         }
     }
 
+    /// <summary>
+    /// Train the network on the last inputs given the expected outputs.
+    /// </summary>
+    /// <param name="expected">The expected outputs.</param>
     public void BackProp(float[] expected) {
         Layers[^1].BackPropOutput(expected);
 
@@ -99,6 +94,11 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
         }
     }
 
+    /// <summary>
+    /// Train the network on a batch of inputs given the expected outputs.
+    /// </summary>
+    /// <param name="inputs">The inputs to the neural network.</param>
+    /// <param name="expected">The expected outputs.</param>
     public void BatchTrain(float[][] inputs, float[][] expected) {
         for (int j = 0; j < inputs.Length; ++j) {
             var prevOutputs = inputs[j];
@@ -118,125 +118,39 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
         }
     }
 
-    public static NeuralNetwork LoadFromFile(string path) {
-        var lines = File.ReadAllLines(path);
-        List<int> layers = new();
-        for (int i = 0; i < lines[0].Length; ++i) {
-            // Is this a digit?
-            if (char.IsDigit(lines[0][i])) {
-                // Get the number of digits in the number.
-                int j = i + 1;
-                for (; j < lines[0].Length; ++j) {
-                    // Is this not a digit?
-                    if (!char.IsDigit(lines[0][j])) {
-                        break;
-                    }
-                }
-
-                // Parse the number.
-                var num = int.Parse(lines[0].Substring(i, j - i));
-                layers.Add(num);
-                i = j;
-            }
+    /// <summary>
+    /// Save the neural network to a file.
+    /// </summary>
+    /// <param name="path">The path to save the neural network to.</param>
+    public void SaveToFile(string path) {
+        using var writer = new StreamWriter(path);
+        foreach (var layer in Layers) {
+            layer.SaveToFile(writer);
         }
-
-        // Setup the weight array.
-        float[][,] weights = new float[layers.Count - 1][,];
-        float[][] biases = new float[layers.Count - 1][];
-        for (int i = 0; i < weights.Length; ++i) {
-            weights[i] = new float[layers[i + 1], layers[i]];
-            biases[i] = new float[layers[i + 1]];
-        }
-
-        // Get the weights and biases.
-        int w = 0, y = 0;
-        for (int i = 1; i < lines.Length; ++i) {
-            // # lines indicate the start of a new weight matrix.
-            if (lines[i] == "#") {
-                Trace.Assert(y == weights[w].GetLength(0));
-                y = 0;
-                ++w;
-                continue;
-            }
-
-            // Go through all the characters in each line.
-            int x = 0;
-            for (int j = 0; j < lines[i].Length; ++j) {
-                // Is this the start of a weight?
-                if (char.IsDigit(lines[i][j]) || lines[i][j] == '-') {
-                    int k = j + 1;
-                    for (; k < lines[i].Length; ++k) {
-                        // Is this the end of a weight?
-                        if (lines[i][k] == ' ') {
-                            break;
-                        }
-                    }
-
-                    // Parse the number.
-                    var subst = lines[i].Substring(j, k - j);
-                    var weight = float.Parse(subst);
-                    if (x < weights[w].GetLength(1)) {
-                        weights[w][y, x] = weight;
-                        ++x;
-                    }
-                    else {
-                        biases[w][y] = weight;
-                    }
-                    j = k;
-                }
-            }
-            Trace.Assert(x == weights[w].GetLength(1) + 1);
-            ++y;
-        }
-
-        // Get the activation types.
-        ActivationType[] activationTypes = new ActivationType[layers.Count - 1];
-        for (int i = 0; i < activationTypes.Length; ++i) {
-            activationTypes[i] = (ActivationType)Enum.Parse(typeof(ActivationType), lines[lines.Length - activationTypes.Length + i]);
-        }
-
-        // Get the learning rate.
-        float learningRate = float.Parse(lines[^1]);
-
-        return new NeuralNetwork(weights, activationTypes, learningRate);
     }
 
-    public void SaveToFile(string path) {
-        // Specify the layer sizes.
-        StringBuilder sb = new("{");
-        for (int i = 0; i < Layers.Length; i++) {
-            sb.Append(Layers[i].numberOfInputs);
-            sb.Append(',');
-        }
-        sb.Append(Layers[^1].numberOfOutputs);
-        sb.Append('}');
-        sb.AppendLine();
+    /// <summary>
+    /// Load a neural network from a file.
+    /// </summary>
+    /// <param name="path">The path to load the neural network from.</param>
+    public static NeuralNetwork LoadFromFile(string path) {
+        using var reader = new StreamReader(path);
+        List<Layer> layers = new();
 
-        // Get the weights and biases.
-        for (int i = 0; i < Layers.Length; i++) {
-            for (int j = 0; j < Layers[i].numberOfOutputs; j++) {
-                for (int k = 0; k < Layers[i].numberOfInputs; k++) {
-                    sb.Append(Layers[i].Weights[j, k]);
-                    sb.Append(' ');
-                }
-                sb.Append(Layers[i].Biases[j]);
-                sb.AppendLine();
+        Layer next = null;
+        do {
+            next = Layer.LoadFromFile(reader);
+            if (next != null) {
+                layers.Add(next);
             }
-            sb.Append('#');
-            sb.AppendLine();
+        }
+        while (next != null);
+
+        if (layers.Count < 2) {
+            throw new InvalidDataException("Invalid NeuralNetwork Weights file: There must be at least two layers in the neural network.");
         }
 
-        // Write the activation types.
-        for (int i = 0; i < Layers.Length; i++) {
-            sb.AppendLine(Layers[i].ActivationType.ToString());
-        }
-
-        // Write the learning rate.
-        sb.AppendLine(Layers[0].LearningRate.ToString());
-
-        // Write the weights to the file at the given path.
-        using StreamWriter file = new(path);
-        file.Write(sb.ToString());
+        return new NeuralNetwork(layers.ToArray());
     }
 
     /// <summary>
@@ -244,7 +158,7 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
     /// </summary>
     /// <param name="other">The other neural network.</param>
     /// <returns>An integer indicating the comparison result.</returns>
-    public int CompareTo(NeuralNetwork? other) {
+    public int CompareTo(NeuralNetwork other) {
         if (other == null)
             throw new NullReferenceException();
 
