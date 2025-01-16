@@ -13,7 +13,7 @@ public class NeuralNetworkTest {
         // 1 1 1    => 1
 
         NeuralNetwork net = new(
-            new() { 3, 10, 1 },
+            new() { 3, 25, 1 },
             new() { ActivationType.RELU, ActivationType.SIGMOID },
             0.5f
         );

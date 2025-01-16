@@ -113,7 +113,7 @@ public class CubeScript : MonoBehaviour {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                Cubelets[2, i, j] = clockwise ? face[2 - j, i] : face[j, 2 - i];
+                Cubelets[2, i, j] = clockwise ? face[j, 2 - i] : face[2 - j, i];
             }
         }
     }
