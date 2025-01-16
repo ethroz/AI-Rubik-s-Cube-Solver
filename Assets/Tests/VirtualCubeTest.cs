@@ -18,7 +18,7 @@ public class VirtualCubeTest {
     [Test]
     public void TopLayerClockwise() {
         VirtualCube cube = new();
-        cube.TopLayer(true);
+        cube.RotateTop(true);
         var expected = new string[] {
             "YYY RRR GGG OOO BBB WWW",
             "YYY BBB RRR GGG OOO WWW",
@@ -31,7 +31,7 @@ public class VirtualCubeTest {
     [Test]
     public void TopLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.TopLayer(false);
+        cube.RotateTop(false);
         var expected = new string[] {
             "YYY OOO BBB RRR GGG WWW",
             "YYY BBB RRR GGG OOO WWW",
@@ -44,7 +44,7 @@ public class VirtualCubeTest {
     [Test]
     public void LeftLayerClockwise() {
         VirtualCube cube = new();
-        cube.LeftLayer(true);
+        cube.RotateLeft(true);
         var expected = new string[] {
             "OYY BBB YRR GGG OOW RWW",
             "OYY BBB YRR GGG OOW RWW",
@@ -57,7 +57,7 @@ public class VirtualCubeTest {
     [Test]
     public void LeftLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.LeftLayer(false);
+        cube.RotateLeft(false);
         var expected = new string[] {
             "RYY BBB WRR GGG OOY OWW",
             "RYY BBB WRR GGG OOY OWW",
@@ -70,7 +70,7 @@ public class VirtualCubeTest {
     [Test]
     public void FrontLayerClockwise() {
         VirtualCube cube = new();
-        cube.FrontLayer(true);
+        cube.RotateFront(true);
         var expected = new string[] {
             "YYY BBW RRR YGG OOO GGG",
             "YYY BBW RRR YGG OOO WWW",
@@ -83,7 +83,7 @@ public class VirtualCubeTest {
     [Test]
     public void FrontLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.FrontLayer(false);
+        cube.RotateFront(false);
         var expected = new string[] {
             "YYY BBY RRR WGG OOO BBB",
             "YYY BBY RRR WGG OOO WWW",
@@ -96,7 +96,7 @@ public class VirtualCubeTest {
     [Test]
     public void RightLayerClockwise() {
         VirtualCube cube = new();
-        cube.RightLayer(true);
+        cube.RotateRight(true);
         var expected = new string[] {
             "YYR BBB RRW GGG YOO WWO",
             "YYR BBB RRW GGG YOO WWO",
@@ -109,7 +109,7 @@ public class VirtualCubeTest {
     [Test]
     public void RightLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.RightLayer(false);
+        cube.RotateRight(false);
         var expected = new string[] {
             "YYO BBB RRY GGG WOO WWR",
             "YYO BBB RRY GGG WOO WWR",
@@ -122,7 +122,7 @@ public class VirtualCubeTest {
     [Test]
     public void BackLayerClockwise() {
         VirtualCube cube = new();
-        cube.BackLayer(true);
+        cube.RotateBack(true);
         var expected = new string[] {
             "BBB WBB RRR GGY OOO WWW",
             "YYY WBB RRR GGY OOO WWW",
@@ -135,7 +135,7 @@ public class VirtualCubeTest {
     [Test]
     public void BackLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.BackLayer(false);
+        cube.RotateBack(false);
         var expected = new string[] {
             "GGG YBB RRR GGW OOO WWW",
             "YYY YBB RRR GGW OOO WWW",
@@ -148,7 +148,7 @@ public class VirtualCubeTest {
     [Test]
     public void BottomLayerClockwise() {
         VirtualCube cube = new();
-        cube.BottomLayer(true);
+        cube.RotateBottom(true);
         var expected = new string[] {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
@@ -161,7 +161,7 @@ public class VirtualCubeTest {
     [Test]
     public void BottomLayerCounterClockwise() {
         VirtualCube cube = new();
-        cube.BottomLayer(false);
+        cube.RotateBottom(false);
         var expected = new string[] {
             "YYY BBB RRR GGG OOO WWW",
             "YYY BBB RRR GGG OOO WWW",
@@ -174,9 +174,9 @@ public class VirtualCubeTest {
     [Test]
     public void TopThenLeftThenBack() {
         VirtualCube cube = new();
-        cube.TopLayer(true);
-        cube.LeftLayer(true);
-        cube.BackLayer(true);
+        cube.RotateTop(true);
+        cube.RotateLeft(true);
+        cube.RotateBack(true);
         var expected = new string[] {
             "BBB RBR YGG OOO WWW GWW",
             "OYY WBR YRR GGY BOO RWW",
@@ -189,9 +189,9 @@ public class VirtualCubeTest {
     [Test]
     public void RightThenFrontThenBottom() {
         VirtualCube cube = new();
-        cube.RightLayer(false);
-        cube.FrontLayer(false);
-        cube.BottomLayer(false);
+        cube.RotateRight(false);
+        cube.RotateFront(false);
+        cube.RotateBottom(false);
         var expected = new string[] {
             "YYO BBO YYY RGG WOO WWB",
             "YYO BBY RRR WGG WOO WWB",
@@ -204,16 +204,16 @@ public class VirtualCubeTest {
     [Test]
     public void KnownScramble() {
         VirtualCube cube = new();
-        cube.LeftLayer(false);
-        cube.TopLayer(true);
-        cube.FrontLayer(true);
-        cube.BackLayer(true);
-        cube.FrontLayer(true);
-        cube.BackLayer(false);
-        cube.BackLayer(false);
-        cube.LeftLayer(false);
-        cube.RightLayer(true);
-        cube.FrontLayer(false);
+        cube.RotateLeft(false);
+        cube.RotateTop(true);
+        cube.RotateFront(true);
+        cube.RotateBack(true);
+        cube.RotateFront(true);
+        cube.RotateBack(false);
+        cube.RotateBack(false);
+        cube.RotateLeft(false);
+        cube.RotateRight(true);
+        cube.RotateFront(false);
         var expected = new string[] {
             "RGW GGG YWB YBB OOW OBR",
             "RYW RBW RRG YGO YOY BWO",

@@ -27,6 +27,35 @@ public enum Edge {
     LEFT = 3,
 }
 
+public class CubeMove {
+    public Face Face;
+    public bool Clockwise;
+
+    public CubeMove(Face face, bool clockwise) {
+        Face = face;
+        Clockwise = clockwise;
+    }
+
+    public override bool Equals(object obj) {
+        if (obj is CubeMove other) {
+            return Face == other.Face && Clockwise == other.Clockwise;
+        }
+        return false;
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(Face, Clockwise);
+    }
+
+    public static bool operator ==(CubeMove left, CubeMove right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(CubeMove left, CubeMove right) {
+        return !(left == right);
+    }
+}
+
 public class VirtualCube {
     // Cube layout:
     //
@@ -57,32 +86,16 @@ public class VirtualCube {
         }
     }
 
-    public VirtualCube(string stateString) {
-        var lines = stateString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        if (lines.Length != 3) {
-            throw new ArgumentException("Invalid state string");
-        }
-
-        for (int j = 0; j < 3; ++j) {
-            var line = lines[j];
-            if (line.Length != 18) {
-                throw new ArgumentException("Invalid state string");
-            }
-
-            for (int i = 0; i < 6; ++i) {
+    public VirtualCube Copy() {
+        var copy = new VirtualCube();
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 3; ++j) {
                 for (int k = 0; k < 3; ++k) {
-                    state[i, j, k] = line[i * 3 + k] switch {
-                        'Y' => Color.YELLOW,
-                        'B' => Color.BLUE,
-                        'R' => Color.RED,
-                        'G' => Color.GREEN,
-                        'O' => Color.ORANGE,
-                        'W' => Color.WHITE,
-                        _ => throw new ArgumentException("Invalid color"),
-                    };
+                    copy.state[i, j, k] = state[i, j, k];
                 }
             }
         }
+        return copy;
     }
 
     public Color[,,] GetState() {
@@ -154,7 +167,7 @@ public class VirtualCube {
         }
     }
 
-    public void TopLayer(bool clockwise) {
+    public void RotateTop(bool clockwise) {
         RotateFace(Face.TOP, clockwise);
 
         var order = new (Face, Edge)[] {
@@ -171,7 +184,7 @@ public class VirtualCube {
         }
     }
 
-    public void LeftLayer(bool clockwise) {
+    public void RotateLeft(bool clockwise) {
         RotateFace(Face.LEFT, clockwise);
 
         var order = new (Face, Edge)[] {
@@ -188,7 +201,7 @@ public class VirtualCube {
         }
     }
 
-    public void FrontLayer(bool clockwise) {
+    public void RotateFront(bool clockwise) {
         RotateFace(Face.FRONT, clockwise);
 
         var order = new (Face, Edge)[] {
@@ -205,7 +218,7 @@ public class VirtualCube {
         }
     }
 
-    public void RightLayer(bool clockwise) {
+    public void RotateRight(bool clockwise) {
         RotateFace(Face.RIGHT, clockwise);
 
         var order = new (Face, Edge)[] {
@@ -222,7 +235,7 @@ public class VirtualCube {
         }
     }
 
-    public void BackLayer(bool clockwise) {
+    public void RotateBack(bool clockwise) {
         RotateFace(Face.BACK, !clockwise);
 
         var order = new (Face, Edge)[] {
@@ -239,7 +252,7 @@ public class VirtualCube {
         }
     }
 
-    public void BottomLayer(bool clockwise) {
+    public void RotateBottom(bool clockwise) {
         RotateFace(Face.BOTTOM, !clockwise);
 
         var order = new (Face, Edge)[] {
@@ -256,19 +269,55 @@ public class VirtualCube {
         }
     }
 
-    public int[] Scramble(int moves = 25) {
+    public void Rotate(CubeMove move) {
+        switch (move.Face) {
+            case Face.TOP:
+                RotateTop(move.Clockwise);
+                break;
+            case Face.LEFT:
+                RotateLeft(move.Clockwise);
+                break;
+            case Face.FRONT:
+                RotateFront(move.Clockwise);
+                break;
+            case Face.RIGHT:
+                RotateRight(move.Clockwise);
+                break;
+            case Face.BACK:
+                RotateBack(move.Clockwise);
+                break;
+            case Face.BOTTOM:
+                RotateBottom(move.Clockwise);
+                break;
+        }
+    }
+
+    public CubeMove[] GenerateScramble(int moves = 25) {
         if (moves < 1) {
             throw new ArgumentException("Number of moves must be positive");
         }
 
-        var movesArray = new int[moves];
+        var movesArray = new CubeMove[moves];
         for (int i = 0; i < moves; i++) {
-            List<int> choices = new() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+            List<CubeMove> choices = new() {
+                new(Face.TOP, true),
+                new(Face.TOP, false),
+                new(Face.LEFT, true),
+                new(Face.LEFT, false),
+                new(Face.FRONT, true),
+                new(Face.FRONT, false),
+                new(Face.RIGHT, true),
+                new(Face.RIGHT, false),
+                new(Face.BACK, true),
+                new(Face.BACK, false),
+                new(Face.BOTTOM, true),
+                new(Face.BOTTOM, false),
+            };
             if (i >= 1) {
                 // Avoid placing opposite moves next to each other.
-                var prevNum = movesArray[i - 1];
-                var oppositePrevNum = prevNum + (prevNum % 2 == 0 ? 1 : -1);
-                choices.Remove(oppositePrevNum);
+                var prevMove = movesArray[i - 1];
+                var oppositePrevMove = new CubeMove(prevMove.Face, !prevMove.Clockwise);
+                choices.Remove(oppositePrevMove);
             }
             else if (i >= 2 && movesArray[i - 2] == movesArray[i - 1]) {
                 // Ensure there are no more than 2 of the same move in a row.
@@ -280,33 +329,28 @@ public class VirtualCube {
             movesArray[i] = choices[index];
         }
 
-        foreach (var move in movesArray) {
-            var clockwise = move % 2 == 0;
-            var side = move / 2 + 1;
+        return movesArray;
+    }
 
-            switch (side) {
-                case 1:
-                    TopLayer(clockwise);
-                    break;
-                case 2:
-                    LeftLayer(clockwise);
-                    break;
-                case 3:
-                    FrontLayer(clockwise);
-                    break;
-                case 4:
-                    RightLayer(clockwise);
-                    break;
-                case 5:
-                    BackLayer(clockwise);
-                    break;
-                case 6:
-                    BottomLayer(clockwise);
-                    break;
+    public void Scramble(int moves = 25) {
+        var movesArray = GenerateScramble(moves);
+        foreach (var move in movesArray) {
+            Rotate(move);
+        }
+    }
+
+    public int Score() {
+        int score = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                    if (state[i, j, k] == (Color)i) {
+                        score++;
+                    }
+                }
             }
         }
-
-        return movesArray;
+        return score;
     }
 
     public bool IsSolved() {

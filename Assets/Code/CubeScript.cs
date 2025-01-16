@@ -34,16 +34,12 @@ public class CubeScript : MonoBehaviour {
         Cubelets[2, 0, 2] = GameObject.Find("/Cube/BottomBackRight");
     }
 
-    public Color[,,] GetState() {
-        return virtualCube.GetState();
+    public VirtualCube GetCube() {
+        return virtualCube;
     }
 
-    public string GetStateString() {
-        return virtualCube.GetStateString();
-    }
-
-    public void TopLayer(bool clockwise) {
-        virtualCube.TopLayer(clockwise);
+    public void RotateTop(bool clockwise) {
+        virtualCube.RotateTop(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -61,8 +57,8 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void LeftLayer(bool clockwise) {
-        virtualCube.LeftLayer(clockwise);
+    public void RotateLeft(bool clockwise) {
+        virtualCube.RotateLeft(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -80,8 +76,8 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void FrontLayer(bool clockwise) {
-        virtualCube.FrontLayer(clockwise);
+    public void RotateFront(bool clockwise) {
+        virtualCube.RotateFront(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -99,8 +95,8 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void RightLayer(bool clockwise) {
-        virtualCube.RightLayer(clockwise);
+    public void RotateRight(bool clockwise) {
+        virtualCube.RotateRight(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -118,8 +114,8 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void BackLayer(bool clockwise) {
-        virtualCube.BackLayer(clockwise);
+    public void RotateBack(bool clockwise) {
+        virtualCube.RotateBack(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -137,8 +133,8 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void BottomLayer(bool clockwise) {
-        virtualCube.BottomLayer(clockwise);
+    public void RotateBottom(bool clockwise) {
+        virtualCube.RotateBottom(clockwise);
         var angle = clockwise ? 90 : -90;
         var face = new GameObject[3, 3];
 
@@ -156,32 +152,33 @@ public class CubeScript : MonoBehaviour {
         }
     }
 
-    public void Scramble(int moves = 25) {
-        var movesArray = virtualCube.Scramble(moves);
-        foreach (var move in movesArray) {
-            var clockwise = move % 2 == 0;
-            var side = move / 2 + 1;
+    public void Rotate(CubeMove move) {
+        switch (move.Face) {
+            case Face.TOP:
+                RotateTop(move.Clockwise);
+                break;
+            case Face.LEFT:
+                RotateLeft(move.Clockwise);
+                break;
+            case Face.FRONT:
+                RotateFront(move.Clockwise);
+                break;
+            case Face.RIGHT:
+                RotateRight(move.Clockwise);
+                break;
+            case Face.BACK:
+                RotateBack(move.Clockwise);
+                break;
+            case Face.BOTTOM:
+                RotateBottom(move.Clockwise);
+                break;
+        }
+    }
 
-            switch (side) {
-                case 1:
-                    TopLayer(clockwise);
-                    break;
-                case 2:
-                    LeftLayer(clockwise);
-                    break;
-                case 3:
-                    FrontLayer(clockwise);
-                    break;
-                case 4:
-                    RightLayer(clockwise);
-                    break;
-                case 5:
-                    BackLayer(clockwise);
-                    break;
-                case 6:
-                    BottomLayer(clockwise);
-                    break;
-            }
+    public void Scramble(int moves = 25) {
+        var movesArray = virtualCube.GenerateScramble(moves);
+        foreach (var move in movesArray) {
+            Rotate(move);
         }
     }
 }

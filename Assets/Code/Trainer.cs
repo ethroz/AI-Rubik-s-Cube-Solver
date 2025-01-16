@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEditorInternal;
 using UnityEngine;
 
 public class Trainer : MonoBehaviour {
@@ -11,36 +12,23 @@ public class Trainer : MonoBehaviour {
     private bool IsTraining = false;
 
     // Path variables
-    private string WeightsPath;
+    private readonly string WeightsPath = Application.dataPath + @"\Saves\Weights.txt";
 
     // Neural Network
     // public bool UseSavedWeights = true;
     private NeuralNetwork Network;
+    private StateTreeNode Root;
     private static readonly int InputSize = 3 * 3 * 6 * 6;
-    public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
     private static readonly int OutputSize = 6 * 2;
+    public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
     public float LearningRate = 0.01f;
-    public int MaxIterations = 500;
+    public int MaxIterations = 100;
+    public int Lookahead = 1;
+    public float DiscountRate = 0.99f;
     private int CurrentIteration = 1;
 
     void Start() {
         Cube = GameObject.FindWithTag("Cube").GetComponent<CubeScript>();
-
-        WeightsPath = Application.dataPath + @"\Saves\Weights.txt";
-
-        List<int> layers = new()
-        {
-            InputSize
-        };
-        for (int i = 0; i < NeuralNetHiddenLayers.Length; i++) {
-            layers.Add(NeuralNetHiddenLayers[i]);
-        }
-        layers.Add(OutputSize);
-        var activationTypes = new List<ActivationType>() { 
-            ActivationType.RELU,
-            ActivationType.SIGMOID
-        };
-        Network = new(layers, activationTypes, LearningRate);
     }
 
     void Update() {
@@ -63,28 +51,49 @@ public class Trainer : MonoBehaviour {
         }
 
 
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            // IsTraining = true;
-            // Debug.Log("Training started");
-            // return;
-            Debug.Log(Cube.GetStateString());
+        if (Input.GetKeyDown(KeyCode.Return)) {
+            CreateNet();
+            CreatePredictionTree();
+            IsTraining = true;
+            return;
         }
 
         var clockwise = !Input.GetKey(KeyCode.LeftShift);
         if (Input.GetKeyDown(KeyCode.Q))
-            Cube.BottomLayer(clockwise);
+            Cube.RotateBottom(clockwise);
         if (Input.GetKeyDown(KeyCode.W))
-            Cube.BackLayer(clockwise);
+            Cube.RotateBack(clockwise);
         if (Input.GetKeyDown(KeyCode.E))
-            Cube.TopLayer(clockwise);
+            Cube.RotateTop(clockwise);
         if (Input.GetKeyDown(KeyCode.A))
-            Cube.LeftLayer(clockwise);
+            Cube.RotateLeft(clockwise);
         if (Input.GetKeyDown(KeyCode.S))
-            Cube.FrontLayer(clockwise);
+            Cube.RotateFront(clockwise);
         if (Input.GetKeyDown(KeyCode.D))
-            Cube.RightLayer(clockwise);
+            Cube.RotateRight(clockwise);
         if (Input.GetKeyDown(KeyCode.X))
             Cube.Scramble();
+    }
+
+    private void CreateNet() {
+        List<int> layers = new()
+        {
+            InputSize
+        };
+        for (int i = 0; i < NeuralNetHiddenLayers.Length; i++) {
+            layers.Add(NeuralNetHiddenLayers[i]);
+        }
+        layers.Add(OutputSize);
+        var activationTypes = new List<ActivationType>() { 
+            ActivationType.RELU,
+            ActivationType.SIGMOID
+        };
+        Network = new(layers, activationTypes, LearningRate);
+    }
+
+    private void CreatePredictionTree() {
+        Root = new StateTreeNode(Cube.GetCube(), null);
+        Root.CreateChildren(Lookahead);
     }
 
     private void TrainingStep() {
@@ -93,7 +102,7 @@ public class Trainer : MonoBehaviour {
             return;
         }
 
-        var state = Cube.GetState();
+        var state = Cube.GetCube().GetState();
         var input = CubeStateToInput(state);
         var output = Network.FeedForward(input);
         var action = Functions.ArgMax(output);
@@ -127,22 +136,22 @@ public class Trainer : MonoBehaviour {
         var face = action / 2 + 1;
         switch (face) {
             case 1:
-                Cube.TopLayer(clockwise);
+                Cube.RotateTop(clockwise);
                 break;
             case 2:
-                Cube.LeftLayer(clockwise);
+                Cube.RotateLeft(clockwise);
                 break;
             case 3:
-                Cube.FrontLayer(clockwise);
+                Cube.RotateFront(clockwise);
                 break;
             case 4:
-                Cube.RightLayer(clockwise);
+                Cube.RotateRight(clockwise);
                 break;
             case 5:
-                Cube.BackLayer(clockwise);
+                Cube.RotateBack(clockwise);
                 break;
             case 6:
-                Cube.BottomLayer(clockwise);
+                Cube.RotateBottom(clockwise);
                 break;
         }
     }

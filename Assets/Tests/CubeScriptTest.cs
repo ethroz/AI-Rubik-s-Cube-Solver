@@ -66,7 +66,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator TopLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.TopLayer(true);
+        cube.RotateTop(true);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -105,7 +105,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator TopLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.TopLayer(false);
+        cube.RotateTop(false);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -144,7 +144,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator LeftLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.LeftLayer(true);
+        cube.RotateLeft(true);
         var expected = new string[] {
             "TopFrontLeft",
             "BottomFront",
@@ -183,7 +183,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator LeftLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.LeftLayer(false);
+        cube.RotateLeft(false);
         var expected = new string[] {
             "BottomBackLeft",
             "BottomFront",
@@ -222,7 +222,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator FrontLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.FrontLayer(true);
+        cube.RotateFront(true);
         var expected = new string[] {
             "BottomFrontRight",
             "FrontRight",
@@ -261,7 +261,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator FrontLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.FrontLayer(false);
+        cube.RotateFront(false);
         var expected = new string[] {
             "TopFrontLeft",
             "FrontLeft",
@@ -300,7 +300,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator RightLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.RightLayer(true);
+        cube.RotateRight(true);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -339,7 +339,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator RightLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.RightLayer(false);
+        cube.RotateRight(false);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -378,7 +378,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator BackLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.BackLayer(true);
+        cube.RotateBack(true);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -417,7 +417,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator BackLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.BackLayer(false);
+        cube.RotateBack(false);
         var expected = new string[] {
             "BottomFrontLeft",
             "BottomFront",
@@ -456,7 +456,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator BottomLayerClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.BottomLayer(true);
+        cube.RotateBottom(true);
         var expected = new string[] {
             "BottomFrontRight",
             "BottomRight",
@@ -495,7 +495,7 @@ public class CubsScriptTest {
     [UnityTest]
     public IEnumerator BottomLayerCounterClockwise() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
-        cube.BottomLayer(false);
+        cube.RotateBottom(false);
         var expected = new string[] {
             "BottomBackLeft",
             "BottomLeft",
@@ -535,16 +535,16 @@ public class CubsScriptTest {
     public IEnumerator KnownScramblePositions() {
         var cube = GameObject.Find("/Cube").GetComponent<CubeScript>();
 
-        cube.LeftLayer(false);
-        cube.TopLayer(true);
-        cube.FrontLayer(true);
-        cube.BackLayer(true);
-        cube.FrontLayer(true);
-        cube.BackLayer(false);
-        cube.BackLayer(false);
-        cube.LeftLayer(false);
-        cube.RightLayer(true);
-        cube.FrontLayer(false);
+        cube.RotateLeft(false);
+        cube.RotateTop(true);
+        cube.RotateFront(true);
+        cube.RotateBack(true);
+        cube.RotateFront(true);
+        cube.RotateBack(false);
+        cube.RotateBack(false);
+        cube.RotateLeft(false);
+        cube.RotateRight(true);
+        cube.RotateFront(false);
 
         List<Vector3> positions = new();
         for (int i = 0; i < 3; ++i) {
