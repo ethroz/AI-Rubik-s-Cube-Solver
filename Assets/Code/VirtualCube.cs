@@ -36,9 +36,13 @@ public class VirtualCube {
     //   TOP   |   LEFT  |  FRONT  |  RIGHT  |  BACK   | BOTTOM
     //    O    |    Y    |    Y    |    Y    |    Y    |    R
     //   YYY   |   BBB   |   RRR   |   GGG   |   OOO   |   WWW
-    // B YYY G | O BBB R | B RRR G | R GGG O | B OOO G | B WWW G
+    // B YYY G | O BBB R | B RRR G | R GGG O | G OOO B | B WWW G
     //   YYY   |   BBB   |   RRR   |   GGG   |   OOO   |   WWW
     //    R    |    W    |    W    |    W    |    W    |    O
+    //
+    // All sides are oriented according to the above diagram^
+    // They are oriented as if viewing from outside the cube.
+    // This simplifies the rotational logic.
 
     private readonly Color[,,] state = new Color[6,3,3];
 
@@ -145,7 +149,7 @@ public class VirtualCube {
             (Face.TOP, Edge.LEFT),
             (Face.FRONT, Edge.LEFT),
             (Face.BOTTOM, Edge.LEFT),
-            (Face.BACK, Edge.LEFT),
+            (Face.BACK, Edge.RIGHT),
         };
         if (clockwise) {
             Array.Reverse(order);
@@ -161,7 +165,7 @@ public class VirtualCube {
         var order = new (Face, Edge)[] {
             (Face.TOP, Edge.BOTTOM),
             (Face.RIGHT, Edge.LEFT),
-            (Face.BOTTOM, Edge.BOTTOM),
+            (Face.BOTTOM, Edge.TOP),
             (Face.LEFT, Edge.RIGHT),
         };
         if (clockwise) {
@@ -177,7 +181,7 @@ public class VirtualCube {
 
         var order = new (Face, Edge)[] {
             (Face.TOP, Edge.RIGHT),
-            (Face.BACK, Edge.RIGHT),
+            (Face.BACK, Edge.LEFT),
             (Face.BOTTOM, Edge.RIGHT),
             (Face.FRONT, Edge.RIGHT),
         };
@@ -190,12 +194,12 @@ public class VirtualCube {
     }
 
     public void BackLayer(bool clockwise) {
-        RotateFace(Face.BACK, clockwise);
+        RotateFace(Face.BACK, !clockwise);
 
         var order = new (Face, Edge)[] {
             (Face.TOP, Edge.TOP),
             (Face.RIGHT, Edge.RIGHT),
-            (Face.BOTTOM, Edge.TOP),
+            (Face.BOTTOM, Edge.BOTTOM),
             (Face.LEFT, Edge.LEFT),
         };
         if (clockwise) {
@@ -207,7 +211,7 @@ public class VirtualCube {
     }
 
     public void BottomLayer(bool clockwise) {
-        RotateFace(Face.BOTTOM, clockwise);
+        RotateFace(Face.BOTTOM, !clockwise);
 
         var order = new (Face, Edge)[] {
             (Face.BACK, Edge.BOTTOM),

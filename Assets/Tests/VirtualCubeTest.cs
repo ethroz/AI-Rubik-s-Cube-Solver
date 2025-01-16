@@ -1,20 +1,10 @@
 using NUnit.Framework;
 using System;
 using System.Linq;
-public class VirtualCubeTest {
-    
-    // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-    // `yield return null;` to skip a frame.
-    // [UnityTest]
-    // public IEnumerator VirtualCubeTestWithEnumeratorPasses()
-    // {
-    //     // Use the Assert class to test conditions.
-    //     // Use yield to skip a frame.
-    //     yield return null;
-    // }
 
+public class VirtualCubeTest {
     [Test]
-    public void VirtualCubeGetStringState() {
+    public void GetStringState() {
         VirtualCube cube = new();
         var expected = new string[] {
             "YYY BBB RRR GGG OOO WWW",
@@ -56,9 +46,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.LeftLayer(true);
         var expected = new string[] {
-            "OYY BBB YRR GGG WOO RWW",
-            "OYY BBB YRR GGG WOO RWW",
-            "OYY BBB YRR GGG WOO RWW",
+            "OYY BBB YRR GGG OOW RWW",
+            "OYY BBB YRR GGG OOW RWW",
+            "OYY BBB YRR GGG OOW RWW",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -69,9 +59,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.LeftLayer(false);
         var expected = new string[] {
-            "RYY BBB WRR GGG YOO OWW",
-            "RYY BBB WRR GGG YOO OWW",
-            "RYY BBB WRR GGG YOO OWW",
+            "RYY BBB WRR GGG OOY OWW",
+            "RYY BBB WRR GGG OOY OWW",
+            "RYY BBB WRR GGG OOY OWW",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -82,9 +72,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.FrontLayer(true);
         var expected = new string[] {
+            "YYY BBW RRR YGG OOO GGG",
             "YYY BBW RRR YGG OOO WWW",
-            "YYY BBW RRR YGG OOO WWW",
-            "BBB BBW RRR YGG OOO GGG",
+            "BBB BBW RRR YGG OOO WWW",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -95,9 +85,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.FrontLayer(false);
         var expected = new string[] {
+            "YYY BBY RRR WGG OOO BBB",
             "YYY BBY RRR WGG OOO WWW",
-            "YYY BBY RRR WGG OOO WWW",
-            "GGG BBY RRR WGG OOO BBB",
+            "GGG BBY RRR WGG OOO WWW",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -108,9 +98,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.RightLayer(true);
         var expected = new string[] {
-            "YYR BBB RRW GGG OOY WWO",
-            "YYR BBB RRW GGG OOY WWO",
-            "YYR BBB RRW GGG OOY WWO",
+            "YYR BBB RRW GGG YOO WWO",
+            "YYR BBB RRW GGG YOO WWO",
+            "YYR BBB RRW GGG YOO WWO",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -121,9 +111,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.RightLayer(false);
         var expected = new string[] {
-            "YYO BBB RRY GGG OOW WWR",
-            "YYO BBB RRY GGG OOW WWR",
-            "YYO BBB RRY GGG OOW WWR",
+            "YYO BBB RRY GGG WOO WWR",
+            "YYO BBB RRY GGG WOO WWR",
+            "YYO BBB RRY GGG WOO WWR",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -134,9 +124,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.BackLayer(true);
         var expected = new string[] {
-            "BBB WBB RRR GGY OOO GGG",
+            "BBB WBB RRR GGY OOO WWW",
             "YYY WBB RRR GGY OOO WWW",
-            "YYY WBB RRR GGY OOO WWW",
+            "YYY WBB RRR GGY OOO GGG",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -147,9 +137,9 @@ public class VirtualCubeTest {
         VirtualCube cube = new();
         cube.BackLayer(false);
         var expected = new string[] {
-            "GGG YBB RRR GGW OOO BBB",
+            "GGG YBB RRR GGW OOO WWW",
             "YYY YBB RRR GGW OOO WWW",
-            "YYY YBB RRR GGW OOO WWW",
+            "YYY YBB RRR GGW OOO BBB",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);
@@ -182,14 +172,52 @@ public class VirtualCubeTest {
     }
 
     [Test]
-    public void TopThenLeft() {
+    public void TopThenLeftThenBack() {
         VirtualCube cube = new();
         cube.TopLayer(true);
         cube.LeftLayer(true);
+        cube.BackLayer(true);
         var expected = new string[] {
-            "YYY RRR GGG OOO BBB WWW",
-            "YYY BBB RRR GGG OOO WWW",
-            "YYY BBB RRR GGG OOO WWW",
+            "BBB RBR YGG OOO WWW GWW",
+            "OYY WBR YRR GGY BOO RWW",
+            "BYY WBR YRR GGY BOO GGO",
+        };
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        CollectionAssert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void RightThenFrontThenBottom() {
+        VirtualCube cube = new();
+        cube.RightLayer(false);
+        cube.FrontLayer(false);
+        cube.BottomLayer(false);
+        var expected = new string[] {
+            "YYO BBO YYY RGG WOO WWB",
+            "YYO BBY RRR WGG WOO WWB",
+            "GGG WOO BBY RRR WGG RRB",
+        };
+        var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
+        CollectionAssert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void KnownScramble() {
+        VirtualCube cube = new();
+        cube.LeftLayer(false);
+        cube.TopLayer(true);
+        cube.FrontLayer(true);
+        cube.BackLayer(true);
+        cube.FrontLayer(true);
+        cube.BackLayer(false);
+        cube.BackLayer(false);
+        cube.LeftLayer(false);
+        cube.RightLayer(true);
+        cube.FrontLayer(false);
+        var expected = new string[] {
+            "RGW GGG YWB YBB OOW OBR",
+            "RYW RBW RRG YGO YOY BWO",
+            "RGO RRG YOW BWW GYY BBO",
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine).SkipLast(1).ToArray();
         CollectionAssert.AreEqual(expected, actual);

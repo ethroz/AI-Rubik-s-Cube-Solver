@@ -6,7 +6,5 @@
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
-    "includePlatforms": [
-        "Editor"
-    ]
+    "includePlatforms": []
 }
