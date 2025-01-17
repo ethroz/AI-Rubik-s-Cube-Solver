@@ -1,7 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using UnityEditorInternal;
 using UnityEngine;
 
 public class Trainer : MonoBehaviour {
@@ -92,7 +89,8 @@ public class Trainer : MonoBehaviour {
     }
 
     private void CreatePredictionTree() {
-        Root = new StateTreeNode(Cube.GetCube(), null);
+        var parameters = new RewardParameters(DiscountRate);
+        Root = new StateTreeNode(Cube.GetCube(), null, parameters);
         Root.CreateChildren(Lookahead);
     }
 

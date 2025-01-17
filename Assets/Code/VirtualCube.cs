@@ -17,7 +17,21 @@ public enum Face {
     FRONT = 2,
     RIGHT = 3,
     BACK = 4,
-    BOTTOM = 5,
+    BOTTOM = 5
+}
+
+public static class FaceExtensions {
+    public static Face Opposite(this Face face) {
+        return face switch {
+            Face.TOP => Face.BOTTOM,
+            Face.LEFT => Face.RIGHT,
+            Face.FRONT => Face.BACK,
+            Face.RIGHT => Face.LEFT,
+            Face.BACK => Face.FRONT,
+            Face.BOTTOM => Face.TOP,
+            _ => throw new ArgumentException("Invalid face"),
+        };
+    }
 }
 
 public enum Edge {
@@ -34,6 +48,23 @@ public class CubeMove {
     public CubeMove(Face face, bool clockwise) {
         Face = face;
         Clockwise = clockwise;
+    }
+
+    public CubeMove(int action) {
+        Face = (Face)(action / 2);
+        Clockwise = action % 2 == 0;
+    }
+
+    public int ToInt() {
+        return (int)Face * 2 + (Clockwise ? 0 : 1);
+    }
+
+    public CubeMove Opposite() {
+        return new(Face, !Clockwise);
+    }
+
+    public override string ToString() {
+        return $"{Face} {(Clockwise ? "CW" : "CCW")}";
     }
 
     public override bool Equals(object obj) {
@@ -292,7 +323,7 @@ public class VirtualCube {
         }
     }
 
-    public CubeMove[] GenerateScramble(int moves = 25) {
+    public static CubeMove[] GenerateScramble(int moves = 25) {
         if (moves < 1) {
             throw new ArgumentException("Number of moves must be positive");
         }
@@ -316,7 +347,7 @@ public class VirtualCube {
             if (i >= 1) {
                 // Avoid placing opposite moves next to each other.
                 var prevMove = movesArray[i - 1];
-                var oppositePrevMove = new CubeMove(prevMove.Face, !prevMove.Clockwise);
+                var oppositePrevMove = prevMove.Opposite();
                 choices.Remove(oppositePrevMove);
             }
             else if (i >= 2 && movesArray[i - 2] == movesArray[i - 1]) {

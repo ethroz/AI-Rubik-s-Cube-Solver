@@ -176,7 +176,7 @@ public class CubeScript : MonoBehaviour {
     }
 
     public void Scramble(int moves = 25) {
-        var movesArray = virtualCube.GenerateScramble(moves);
+        var movesArray = VirtualCube.GenerateScramble(moves);
         foreach (var move in movesArray) {
             Rotate(move);
         }
