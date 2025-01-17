@@ -396,4 +396,36 @@ public class VirtualCube {
         }
         return true;
     }
+
+    public static bool operator ==(VirtualCube left, VirtualCube right) {
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                    if (left.state[i, j, k] != right.state[i, j, k]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public static bool operator !=(VirtualCube left, VirtualCube right) {
+        return !(left == right);
+    }
+
+    public override bool Equals(object obj) {
+        if (obj is VirtualCube other) {
+            return this == other;
+        }
+        return false;
+    }
+
+    public override int GetHashCode() {
+        int hc = state.Length;
+        foreach (var color in state) {
+            hc = unchecked(hc * 161803 + (int)color);
+        }
+        return hc;
+    }
 }

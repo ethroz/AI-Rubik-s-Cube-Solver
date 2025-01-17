@@ -1,33 +1,42 @@
 using System;
 using System.Collections.Generic;
 
-public class RewardParameters {
-    public readonly float DiscountRate;
+public class RewardCalculator {
+    public static readonly int MAX_SCORE = 9 * 6;
+    private readonly float DiscountRate;
+    private readonly int Lookahead;
+    private readonly Dictionary<VirtualCube, int> Occurrences = new();
 
-    public RewardParameters(float discountRate = 1.0f) {
+    public RewardCalculator(int lookahead, float discountRate = 1.0f) {
+        Lookahead = lookahead;
         DiscountRate = discountRate;
+    }
+
+    public void AddOccurrence(VirtualCube state) {
+        if (Occurrences.ContainsKey(state)) {
+            Occurrences[state]++;
+        }
+        else {
+            Occurrences.Add(state, 1);
+        }
+    }
+
+    public float Calculate(float score, StateTreeNode node) {
+        return score * DiscountRate - Occurrences.GetValueOrDefault(node.State, 0) + (node.Score == MAX_SCORE ? Lookahead * MAX_SCORE : 0);
     }
 }
 
 public class StateTreeNode {
     public readonly VirtualCube State;
     public readonly CubeMove Move;
-    public readonly float Score;
-    private readonly RewardParameters parameters;
+    public readonly int Score;
+    private readonly RewardCalculator calculator;
     private readonly List<StateTreeNode> children;
 
-    public StateTreeNode(VirtualCube state, CubeMove move) {
+    public StateTreeNode(VirtualCube state, CubeMove move, RewardCalculator rewardParameters) {
         State = state;
         Move = move;
-        parameters = new();
-        Score = state.Score();
-        children = new();
-    }
-
-    public StateTreeNode(VirtualCube state, CubeMove move, RewardParameters rewardParameters) {
-        State = state;
-        Move = move;
-        parameters = rewardParameters;
+        calculator = rewardParameters;
         Score = state.Score();
         children = new();
     }
@@ -59,7 +68,7 @@ public class StateTreeNode {
                 VirtualCube newState = State.Copy();
                 var move = new CubeMove((Face)i, j == 0);
                 newState.Rotate(move);
-                children.Add(new(newState, move, parameters));
+                children.Add(new(newState, move, calculator));
             }
         }
     }
@@ -78,13 +87,14 @@ public class StateTreeNode {
 
     public float CalculateBestScore() {
         if (children.Count == 0) {
-            return Score;
+            return calculator.Calculate(Score, this);
         }
         var bestScore = float.NegativeInfinity;
         foreach (var child in children) {
-            bestScore = Math.Max(bestScore, child.CalculateBestScore() * parameters.DiscountRate);
+            var score = child.CalculateBestScore();
+            bestScore = Math.Max(bestScore, score);
         }
-        return bestScore;
+        return calculator.Calculate(bestScore + Score, this);
     }
 
     public StateTreeNode GetBestChild() {

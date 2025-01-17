@@ -15,6 +15,7 @@ public class Trainer : MonoBehaviour {
     // public bool UseSavedWeights = true;
     private NeuralNetwork Network;
     private StateTreeNode Root;
+    private RewardCalculator calculator;
     private static readonly int InputSize = 3 * 3 * 6 * 6;
     private static readonly int OutputSize = 6 * 2;
     public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
@@ -22,7 +23,7 @@ public class Trainer : MonoBehaviour {
     public int MaxIterations = 100;
     public int Lookahead = 3;
     public float DiscountRate = 0.99f;
-    private int CurrentIteration = 1;
+    private int CurrentIteration = 0;
 
     void Start() {
         Cube = GameObject.FindWithTag("Cube").GetComponent<CubeScript>();
@@ -86,17 +87,24 @@ public class Trainer : MonoBehaviour {
             ActivationType.SIGMOID
         };
         Network = new(layers, activationTypes, LearningRate);
+        CurrentIteration = 0;
     }
 
     private void CreatePredictionTree() {
-        var parameters = new RewardParameters(DiscountRate);
-        Root = new StateTreeNode(Cube.GetState(), null, parameters);
+        calculator = new(Lookahead, DiscountRate);
+        Root = new StateTreeNode(Cube.GetState(), null, calculator);
         Root.CreateChildren(Lookahead);
     }
 
     private void TrainingStep() {
+        if (Cube.IsSolved()) {
+            IsTraining = false;
+            Debug.Log($"Solved in {CurrentIteration} iterations!");
+            return;
+        }
         if (CurrentIteration > MaxIterations) {
             IsTraining = false;
+            Debug.Log("Reached MaxIterations.");
             return;
         }
 
@@ -116,11 +124,6 @@ public class Trainer : MonoBehaviour {
         // Network.BackProp(expectedOutput);
 
         CurrentIteration++;
-
-        if (Cube.IsSolved()) {
-            IsTraining = false;
-            Debug.Log($"Solved in {CurrentIteration} iterations!");
-        }
     }
 
     private float[] CubeStateToInput(Color[,,] colors) {
@@ -141,6 +144,7 @@ public class Trainer : MonoBehaviour {
 
     private CubeMove CalculateBestMove() {
         Root = Root.GetBestChild();
+        calculator.AddOccurrence(Root.State);
         Root.CreateChildren(Lookahead);
         return Root.Move;
     }

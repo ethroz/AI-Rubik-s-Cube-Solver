@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 public class VirtualCubeTest {
@@ -221,5 +222,23 @@ public class VirtualCubeTest {
         };
         var actual = cube.GetStateString().Split(" " + Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         CollectionAssert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void Equals() {
+        VirtualCube original = new();
+        var copy = original.Copy();
+        Assert.AreEqual(original, copy);
+    }
+
+    [Test]
+    public void HashCode() {
+        VirtualCube original = new();
+        var copy = original.Copy();
+        HashSet<VirtualCube> set = new() {
+            original,
+            copy
+        };
+        Assert.AreEqual(1, set.Count);
     }
 }
