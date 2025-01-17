@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 public class NeuralNetwork : IComparable<NeuralNetwork> {
     public readonly Layer[] Layers;
@@ -98,16 +97,15 @@ public class NeuralNetwork : IComparable<NeuralNetwork> {
     /// Train the network on a batch of inputs given the expected outputs.
     /// </summary>
     /// <param name="inputs">The inputs to the neural network.</param>
-    /// <param name="expected">The expected outputs.</param>
-    public void BatchTrain(float[][] inputs, float[][] expected) {
+    /// <param name="outputs">The expected outputs.</param>
+    public void BatchTrain(ReadOnlySpan<float[]> inputs, ReadOnlySpan<float[]> outputs) {
         for (int j = 0; j < inputs.Length; ++j) {
             var prevOutputs = inputs[j];
             for (int i = 0; i < Layers.Length; ++i) {
                 prevOutputs = Layers[i].FeedForward(prevOutputs);
             }
 
-            Layers[^1].BackPropOutput(expected[j]);
-
+            Layers[^1].BackPropOutput(outputs[j]);
             for (int i = Layers.Length - 2; i >= 0; --i) {
                 Layers[i].BackPropHidden(Layers[i + 1].Gamma, Layers[i + 1].Weights);
             }

@@ -1,41 +1,44 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class Trainer : MonoBehaviour {
     // Cube variables
     private CubeScript Cube;
 
-    // User Control
-    private bool IsTraining = false;
-
-    // Path variables
-    private readonly string WeightsPath = Application.dataPath + @"\Saves\Weights.txt";
-
-    // Neural Network
+    // Configurable
+    public List<int> HiddenLayers = new() { 100, 100 };
+    public List<ActivationType> Activations = new() { ActivationType.RELU, ActivationType.SOFTMAX };
+    public float LearningRate = 0.01f;
+    public int DataSize = 1000;
+    [Range(0.0f, 1.0f)]
+    public float TestSplit = 0.2f;
+    public int BatchSize = 10;
+    public int Iterations = 1;
+    public int ScrambleMoves = 3;
     // public bool UseSavedWeights = true;
+    
+    // Neural Net stuff
+    private readonly string WeightsPath = Application.dataPath + @"\Saves\Weights.txt";
     private NeuralNetwork Network;
-    private StateTreeNode Root;
-    private RewardCalculator calculator;
     private static readonly int InputSize = 3 * 3 * 6 * 6;
     private static readonly int OutputSize = 6 * 2;
-    public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
-    public float LearningRate = 0.01f;
-    public int MaxIterations = 500;
-    public int Lookahead = 3;
-    public float DiscountRate = 2.0f; // Favor worse early performance for better later performance.
-    private int CurrentIteration = 0;
-    private int MaxScore = 0;
+    
+    private bool IsSolving = false;
+    private Task TrainTask;
+    private bool IsTraining { get {
+        return TrainTask.Status == TaskStatus.Running;
+    }}
 
     void Start() {
         Cube = GameObject.FindWithTag("Cube").GetComponent<CubeScript>();
     }
 
     void Update() {
-        if (!IsTraining) {
-            UserInput();
-        } else {
-            TrainingStep();
+        UserInput();
+        if (IsSolving) {
+            InferenceStep();
         }
     }
 
@@ -50,11 +53,22 @@ public class Trainer : MonoBehaviour {
             Application.Quit();
         }
 
-
+        if (IsSolving || IsTraining) {
+            return;
+        }
+        
         if (Input.GetKeyDown(KeyCode.Space)) {
-            CreateNet();
-            CreatePredictionTree();
-            IsTraining = true;
+            if (Network == null) {
+                Debug.LogError("Cannot perform model inference without a model");
+            }
+            else {
+                IsSolving = true;
+            }
+            return;
+        }
+        
+        if (Input.GetKeyDown(KeyCode.Return)) {
+            StartTraining();
             return;
         }
 
@@ -76,58 +90,86 @@ public class Trainer : MonoBehaviour {
     }
 
     private void CreateNet() {
-        List<int> layers = new()
-        {
+        List<int> layers = new() {
             InputSize
         };
-        for (int i = 0; i < NeuralNetHiddenLayers.Length; i++) {
-            layers.Add(NeuralNetHiddenLayers[i]);
-        }
+        layers.AddRange(HiddenLayers);
         layers.Add(OutputSize);
-        var activationTypes = new List<ActivationType>() { 
-            ActivationType.RELU,
-            ActivationType.SIGMOID
-        };
-        Network = new(layers, activationTypes, LearningRate);
-        CurrentIteration = 0;
+        Network = new(layers, Activations, LearningRate);
     }
 
-    private void CreatePredictionTree() {
-        calculator = new(Lookahead, DiscountRate);
-        Root = new StateTreeNode(Cube.GetState(), null, calculator);
-        Root.CreateChildren(Lookahead);
-        MaxScore = Root.Score;
+    private void StartTraining() {
+        if (Network == null) {
+            CreateNet();
+        }
+        TrainTask = Task.Run(Train);
     }
 
-    private void TrainingStep() {
-        if (Cube.IsSolved()) {
-            IsTraining = false;
-            Debug.Log($"Solved in {CurrentIteration} iterations!");
-            return;
+    private void Train() {
+        // Copy the inputs.
+        var dataSize = DataSize;
+        var testSplit = TestSplit;
+        var batchSize = BatchSize;
+        var iterations = Iterations;
+        var scrambleMoves = ScrambleMoves;
+
+        Debug.Log("Generating data");
+        var totalSize = dataSize * scrambleMoves;
+        var inputs = new float[totalSize][];
+        var outputs = new float[totalSize][];
+        for (int i = 0; i < dataSize; ++i) {
+            var moves = VirtualCube.GenerateScramble(scrambleMoves);
+            var cube = new VirtualCube();
+            for (int j = 0; j < scrambleMoves; ++j) {
+                cube.Rotate(moves[j]);
+                var input = CubeStateToInput(cube.GetState());
+                inputs[i * scrambleMoves + j] = input;
+                var output = MoveToOutput(moves[i]);
+                outputs[i * scrambleMoves + j] = output;
+            }
         }
-        if (CurrentIteration > MaxIterations) {
-            IsTraining = false;
-            Debug.Log($"Reached MaxIterations.\nMaxScore: {MaxScore}/{RewardCalculator.MAX_SCORE}");
-            return;
+
+        Debug.Log("Splitting the data");
+        var testSize = (int)(totalSize * testSplit);
+        var trainSize = totalSize - testSize;
+        var trainInputs = new ReadOnlySpan<float[]>(inputs, 0, trainSize);
+        var trainOutputs = new ReadOnlySpan<float[]>(outputs, 0, trainSize);
+        var testInputs = new ReadOnlySpan<float[]>(inputs, trainSize, testSize);
+        var testOutputs = new ReadOnlySpan<float[]>(outputs, trainSize, testSize);
+
+        Debug.Log("Starting Training");
+        var numBatches = trainSize / batchSize;
+        for (int i = 0; i < iterations; ++i) {
+            int index = 0;
+            for (int j = 0; j < numBatches; ++j) {
+                var inputBatch = trainInputs.Slice(index, batchSize);
+                var outputBatch = trainOutputs.Slice(index, batchSize);
+                index += batchSize;
+                Network.BatchTrain(inputBatch, outputBatch);
+            }
         }
 
-        var bestMove = CalculateBestMove();
-        Cube.Rotate(bestMove);
-        MaxScore = Math.Max(MaxScore, Root.Score);
+        Debug.Log("Starting Tests");
+        int numCorrect = 0;
+        for (int i = 0; i < testSize; ++i) {
+            var predictedOutputs = Network.FeedForward(testInputs[i]);
+            var predictedOutput = Functions.ArgMax(predictedOutputs);
+            var expectedOutput = Functions.ArgMax(testOutputs[i]);
+            if (predictedOutput == expectedOutput) {
+                ++numCorrect;
+            }
+        }
+        var score = (float)numCorrect / testSize;
+        Debug.Log($"Test score: {score}");
+    }
 
-        // var state = Cube.GetState().GetState();
-        // var input = CubeStateToInput(state);
-        // var output = Network.FeedForward(input);
-        // var action = Functions.ArgMax(output);
-        // var move = new CubeMove(action);
-        // Cube.Rotate(move);
-
-        // var bestMove = CalculateBestMove();
-        // var expectedAction = bestMove.ToInt();
-        // var expectedOutput = Functions.InverseArgMax(expectedAction, OutputSize);
-        // Network.BackProp(expectedOutput);
-
-        CurrentIteration++;
+    private void InferenceStep() {
+        var state = Cube.GetState();
+        var inputs = CubeStateToInput(state);
+        var outputs = Network.FeedForward(inputs);
+        var action = Functions.ArgMax(outputs);
+        var move = new CubeMove(action);
+        Cube.Rotate(move);
     }
 
     private float[] CubeStateToInput(Color[,,] colors) {
@@ -146,10 +188,10 @@ public class Trainer : MonoBehaviour {
         return input;
     }
 
-    private CubeMove CalculateBestMove() {
-        Root = Root.GetBestChild();
-        calculator.AddOccurrence(Root.State);
-        Root.CreateChildren(Lookahead);
-        return Root.Move;
+    private float[] MoveToOutput(CubeMove move) {
+        var opposite = move.Opposite();
+        var action = opposite.ToInt();
+        var output = Functions.InverseArgMax(action, OutputSize);
+        return output;
     }
 }

@@ -8,6 +8,7 @@
 ### Keyboard
 - **Escape**: Quit the application.
 - **Return**: Start training the AI.
+- **Enter**: Use the trained AI to solve the cube.
 - **Q**: Rotate the bottom face.
 - **W**: Rotate the back face.
 - **E**: Rotate the top face.

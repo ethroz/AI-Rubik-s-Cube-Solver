@@ -34,8 +34,8 @@ public class CubeScript : MonoBehaviour {
         Cubelets[2, 0, 2] = GameObject.Find("/Cube/BottomBackRight");
     }
 
-    public VirtualCube GetState() {
-        return virtualCube;
+    public Color[,,] GetState() {
+        return virtualCube.GetState();
     }
 
     public void RotateTop(bool clockwise) {

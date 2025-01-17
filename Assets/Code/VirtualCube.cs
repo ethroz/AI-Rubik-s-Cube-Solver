@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
 
 public enum Color {
@@ -51,6 +53,9 @@ public class CubeMove {
     }
 
     public CubeMove(int action) {
+        if (action < 0 || action > 11) {
+            throw new ArgumentException("Action must be in the range [0, 11].");
+        }
         Face = (Face)(action / 2);
         Clockwise = action % 2 == 0;
     }
@@ -320,6 +325,12 @@ public class VirtualCube {
             case Face.BOTTOM:
                 RotateBottom(move.Clockwise);
                 break;
+        }
+    }
+
+    public void Apply(IEnumerable<CubeMove> moves) {
+        foreach (var move in moves) {
+            Rotate(move);
         }
     }
 
