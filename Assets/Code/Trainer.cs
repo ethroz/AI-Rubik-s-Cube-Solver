@@ -20,7 +20,7 @@ public class Trainer : MonoBehaviour {
     public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
     public float LearningRate = 0.01f;
     public int MaxIterations = 100;
-    public int Lookahead = 1;
+    public int Lookahead = 3;
     public float DiscountRate = 0.99f;
     private int CurrentIteration = 1;
 
@@ -90,7 +90,7 @@ public class Trainer : MonoBehaviour {
 
     private void CreatePredictionTree() {
         var parameters = new RewardParameters(DiscountRate);
-        Root = new StateTreeNode(Cube.GetCube(), null, parameters);
+        Root = new StateTreeNode(Cube.GetState(), null, parameters);
         Root.CreateChildren(Lookahead);
     }
 
@@ -100,17 +100,27 @@ public class Trainer : MonoBehaviour {
             return;
         }
 
-        var state = Cube.GetCube().GetState();
-        var input = CubeStateToInput(state);
-        var output = Network.FeedForward(input);
-        var action = Functions.ArgMax(output);
-        PerformAction(action);
+        var bestMove = CalculateBestMove();
+        Cube.Rotate(bestMove);
 
-        var expectedAction = CalculateExpectedAction();
-        var expectedOutput = Functions.InverseArgMax(expectedAction, OutputSize);
-        Network.BackProp(expectedOutput);
+        // var state = Cube.GetState().GetState();
+        // var input = CubeStateToInput(state);
+        // var output = Network.FeedForward(input);
+        // var action = Functions.ArgMax(output);
+        // var move = new CubeMove(action);
+        // Cube.Rotate(move);
+
+        // var bestMove = CalculateBestMove();
+        // var expectedAction = bestMove.ToInt();
+        // var expectedOutput = Functions.InverseArgMax(expectedAction, OutputSize);
+        // Network.BackProp(expectedOutput);
 
         CurrentIteration++;
+
+        if (Cube.IsSolved()) {
+            IsTraining = false;
+            Debug.Log($"Solved in {CurrentIteration} iterations!");
+        }
     }
 
     private float[] CubeStateToInput(Color[,,] colors) {
@@ -129,33 +139,9 @@ public class Trainer : MonoBehaviour {
         return input;
     }
 
-    private void PerformAction(int action) {
-        var clockwise = action % 2 == 1;
-        var face = action / 2 + 1;
-        switch (face) {
-            case 1:
-                Cube.RotateTop(clockwise);
-                break;
-            case 2:
-                Cube.RotateLeft(clockwise);
-                break;
-            case 3:
-                Cube.RotateFront(clockwise);
-                break;
-            case 4:
-                Cube.RotateRight(clockwise);
-                break;
-            case 5:
-                Cube.RotateBack(clockwise);
-                break;
-            case 6:
-                Cube.RotateBottom(clockwise);
-                break;
-        }
-    }
-
-    private int CalculateExpectedAction() {
-        // TODO
-        return 0;
+    private CubeMove CalculateBestMove() {
+        Root = Root.GetBestChild();
+        Root.CreateChildren(Lookahead);
+        return Root.Move;
     }
 }

@@ -34,7 +34,7 @@ public class CubeScript : MonoBehaviour {
         Cubelets[2, 0, 2] = GameObject.Find("/Cube/BottomBackRight");
     }
 
-    public VirtualCube GetCube() {
+    public VirtualCube GetState() {
         return virtualCube;
     }
 
@@ -180,5 +180,9 @@ public class CubeScript : MonoBehaviour {
         foreach (var move in movesArray) {
             Rotate(move);
         }
+    }
+
+    public bool IsSolved() {
+        return virtualCube.IsSolved();
     }
 }
