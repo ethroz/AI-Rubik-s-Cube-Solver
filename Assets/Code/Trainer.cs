@@ -28,7 +28,7 @@ public class Trainer : MonoBehaviour {
     private bool IsSolving = false;
     private Task TrainTask;
     private bool IsTraining { get {
-        return TrainTask.Status == TaskStatus.Running;
+        return TrainTask != null && TrainTask.Status == TaskStatus.Running;
     }}
 
     void Start() {
@@ -114,6 +114,9 @@ public class Trainer : MonoBehaviour {
         var scrambleMoves = ScrambleMoves;
 
         Debug.Log("Generating data");
+        var sw = new System.Diagnostics.Stopwatch();
+        var decaSeconds = 0;
+        sw.Start();
         var totalSize = dataSize * scrambleMoves;
         var inputs = new float[totalSize][];
         var outputs = new float[totalSize][];
@@ -127,6 +130,14 @@ public class Trainer : MonoBehaviour {
                 var output = MoveToOutput(moves[i]);
                 outputs[i * scrambleMoves + j] = output;
             }
+
+            var elapsedDecaSeconds = sw.ElapsedMilliseconds / 10000;
+            if (elapsedDecaSeconds != decaSeconds) {
+                var progress = (float)i / dataSize;
+                var progressStr = progress.ToString("P2");
+                Debug.Log($"Progress: {progressStr}");
+                decaSeconds = (int)elapsedDecaSeconds;
+            }
         }
 
         Debug.Log("Splitting the data");
@@ -138,6 +149,8 @@ public class Trainer : MonoBehaviour {
         var testOutputs = new ReadOnlySpan<float[]>(outputs, trainSize, testSize);
 
         Debug.Log("Starting Training");
+        decaSeconds = 0;
+        sw.Start();
         var numBatches = trainSize / batchSize;
         for (int i = 0; i < iterations; ++i) {
             int index = 0;
@@ -146,6 +159,14 @@ public class Trainer : MonoBehaviour {
                 var outputBatch = trainOutputs.Slice(index, batchSize);
                 index += batchSize;
                 Network.BatchTrain(inputBatch, outputBatch);
+            }
+
+            var elapsedDecaSeconds = sw.ElapsedMilliseconds / 10000;
+            if (elapsedDecaSeconds != decaSeconds) {
+                var progress = (float)i / dataSize;
+                var progressStr = progress.ToString("P2");
+                Debug.Log($"Progress: {progressStr}");
+                decaSeconds = (int)elapsedDecaSeconds;
             }
         }
 
