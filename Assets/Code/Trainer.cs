@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,10 +21,11 @@ public class Trainer : MonoBehaviour {
     private static readonly int OutputSize = 6 * 2;
     public int[] NeuralNetHiddenLayers = new int[] { 100, 100 };
     public float LearningRate = 0.01f;
-    public int MaxIterations = 100;
+    public int MaxIterations = 500;
     public int Lookahead = 3;
-    public float DiscountRate = 0.99f;
+    public float DiscountRate = 2.0f; // Favor worse early performance for better later performance.
     private int CurrentIteration = 0;
+    private int MaxScore = 0;
 
     void Start() {
         Cube = GameObject.FindWithTag("Cube").GetComponent<CubeScript>();
@@ -49,7 +51,7 @@ public class Trainer : MonoBehaviour {
         }
 
 
-        if (Input.GetKeyDown(KeyCode.Return)) {
+        if (Input.GetKeyDown(KeyCode.Space)) {
             CreateNet();
             CreatePredictionTree();
             IsTraining = true;
@@ -94,6 +96,7 @@ public class Trainer : MonoBehaviour {
         calculator = new(Lookahead, DiscountRate);
         Root = new StateTreeNode(Cube.GetState(), null, calculator);
         Root.CreateChildren(Lookahead);
+        MaxScore = Root.Score;
     }
 
     private void TrainingStep() {
@@ -104,12 +107,13 @@ public class Trainer : MonoBehaviour {
         }
         if (CurrentIteration > MaxIterations) {
             IsTraining = false;
-            Debug.Log("Reached MaxIterations.");
+            Debug.Log($"Reached MaxIterations.\nMaxScore: {MaxScore}/{RewardCalculator.MAX_SCORE}");
             return;
         }
 
         var bestMove = CalculateBestMove();
         Cube.Rotate(bestMove);
+        MaxScore = Math.Max(MaxScore, Root.Score);
 
         // var state = Cube.GetState().GetState();
         // var input = CubeStateToInput(state);

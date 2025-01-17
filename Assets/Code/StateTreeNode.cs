@@ -22,7 +22,7 @@ public class RewardCalculator {
     }
 
     public float Calculate(float score, StateTreeNode node) {
-        return score * DiscountRate - Occurrences.GetValueOrDefault(node.State, 0) + (node.Score == MAX_SCORE ? Lookahead * MAX_SCORE : 0);
+        return score * DiscountRate / Occurrences.GetValueOrDefault(node.State, 0) * (node.Score == MAX_SCORE ? Lookahead * MAX_SCORE : 0);
     }
 }
 

@@ -4,7 +4,7 @@ public class CubeScript : MonoBehaviour {
     public readonly GameObject[,,] Cubelets = new GameObject[3, 3, 3];
     private readonly VirtualCube virtualCube = new();
 
-    void Awake() {
+    void Start() {
         Cubelets[0, 2, 0] = GameObject.Find("/Cube/TopFrontLeft");
         Cubelets[1, 2, 0] = GameObject.Find("/Cube/TopFront");
         Cubelets[2, 2, 0] = GameObject.Find("/Cube/TopFrontRight");
